@@ -177,7 +177,7 @@
   </div>
   <div class="acts">
     <button class="btn primary" id="go" type="button">进入</button>
-    <button class="btn sm" id="clrG" type="button" hidden>换令牌</button>
+    <button class="btn sm" id="clrG" type="button" hidden>清除重输</button>
   </div>
   <p class="hint" id="gst">令牌只存在这台设备的浏览器里，不会上传到任何地方。</p>
 </div>
@@ -191,7 +191,7 @@
         <span class="ver" id="ver">…</span>
         <span class="sp"></span>
         <button class="btn sm" id="rf" type="button">刷新</button>
-        <button class="btn sm" id="clr" type="button">换令牌</button>
+        <button class="btn sm" id="clr" type="button">清除重输</button>
       </div>
       <div class="tabs" id="tabs">
         <button type="button" data-tab="cand" class="on">待审<i id="n-cand">—</i></button>
@@ -244,6 +244,34 @@
   function setToken(v) {
     try { if (v) localStorage.setItem(TKEY, v); else localStorage.removeItem(TKEY); } catch (e) {}
   }
+  /* ---------------- 令牌「洗净」 ----------------
+     手机中文输入法开着「全角」时，打 abc123 实际会得到 ａｂｃ１２３
+     （全角字母/数字）。密码框里全是圆点，肉眼完全看不出差别，但 md5 天差地别
+     → 数据库只会回一句「令牌不对」。提交前统一洗净：
+     去零宽字符 → 全角字母数字转半角 → 全角空格转半角 → 去首尾空白 → 统一小写。
+     （令牌本身全小写，顺手把手机自动大写的 C 也救回来。） */
+  function normTok(v) {
+    return String(v == null ? "" : v)
+      .replace(/[\u200B-\u200D\u2060\uFEFF]/g, "")
+      .replace(/[\uFF01-\uFF5E]/g, function (c) {
+        return String.fromCharCode(c.charCodeAt(0) - 0xFEE0);
+      })
+      .replace(/\u3000/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+  /* 输入串体检：逐个点出非 ASCII 字符，一眼看穿全角 / 零宽 / 隐藏符号 */
+  function tokReport(raw, norm) {
+    var bad = [];
+    for (var i = 0; i < raw.length; i++) {
+      var c = raw.charCodeAt(i);
+      if (c < 33 || c > 126) bad.push("第" + (i + 1) + "位=U+" + c.toString(16).toUpperCase());
+    }
+    return "（框里 " + raw.length + " 位 → 洗净后 " + norm.length + " 位；实际发给数据库 " +
+      token().length + " 位；" +
+      (bad.length ? "可疑字符：" + bad.join("、") : "没有非 ASCII 字符") + "）";
+  }
+  var lastRaw = "";
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function fmt(ts) {
     var d = new Date(ts);
@@ -316,7 +344,7 @@
 
   function diag(e) {
     var m = String((e && e.message) || e);
-    if (/BAD_TOKEN/i.test(m)) return "令牌不对 —— 点下面的「换令牌」，清空后重新输入（可先点「显示」核对一下）。";
+    if (/BAD_TOKEN/i.test(m)) return "令牌不对 —— 数据库不认这串" + tokReport(lastRaw, normTok(lastRaw)) + "。";
     if (e && e.fnOld) return FN_HINT;
     if (/PGRST202|Could not find the function|schema cache|does not exist/i.test(m)) return SQL_HINT;
     return "出错了：" + m;
@@ -844,11 +872,15 @@
       try { $("tk").focus(); } catch (e0) {}
       return;
     }
+    /* ★ 先把令牌存起来，再去读数据（2026-10-08 的真凶就在这一行顺序上）
+       reload() 是从 localStorage 里取令牌的，如果先读后存，就会出现
+       「你输的是新令牌，它却拿着空的 / 旧的那个去问数据库」的死锁 —— 现象是
+       数据库明明认这把钥匙，页面却永远回「令牌不对」，手机/电脑/本地文件都一样。 */
+    setToken(tk);
     $("gst").className = "hint";
     $("gst").textContent = "读取中……";
     try {
       await reload();
-      setToken(tk);
       $("gate").hidden = true;
       $("app").hidden = false;
       var c = candidates().length;
@@ -860,13 +892,18 @@
       $("gst").className = "hint err";
       $("gst").textContent = m;
       setToken("");
-      $("clrG").hidden = false;   /* 门禁页也给出「换令牌」，不必先登进去 */
+      $("clrG").hidden = false;   /* 门禁页也给出「清除重输」，不必先登进去 */
       try { $("tk").focus(); } catch (e1) {}
     }
   }
 
   /* ================= 事件绑定 ================= */
-  $("go").addEventListener("click", function () { boot(($("tk").value || "").trim()); });
+  $("go").addEventListener("click", function () {
+    lastRaw = $("tk").value || "";
+    var t = normTok(lastRaw);            /* 全角 / 零宽都洗净了再提交 */
+    $("tk").value = t;                    /* 洗净后的串写回框里，开着「显示」就能看见差别 */
+    boot(t);
+  });
   $("tk").addEventListener("keydown", function (e) { if (e.key === "Enter") $("go").click(); });
   $("rf").addEventListener("click", function () {
     toast("刷新中……");
@@ -885,7 +922,7 @@
     $("gate").hidden = false;
     $("clrG").hidden = true;
     $("gst").className = "hint";
-    $("gst").textContent = "已清除本机令牌，请输入新令牌。";
+    $("gst").textContent = "已清空输入框。这只是清掉这台设备记的旧令牌，不会改变数据库认的令牌。";
     try { $("tk").focus(); } catch (e) {}
   }
   $("clr").addEventListener("click", clearTok);
@@ -908,8 +945,23 @@
     if (b) setTab(b.getAttribute("data-tab"));
   });
 
-  var saved = token();
-  if (saved) boot(saved);
+  /* ================= 启动 ================= */
+  /* 免输直登：网址后面带 #令牌（例：admin.html#你在后台用的那串令牌）就自动登录，不用手打。
+     用 # 片段而不是 ?查询，是因为片段不会发给服务器，也不会进 GitHub 的访问日志。 */
+  function hashToken() {
+    var h = (location.hash || "").replace(/^#/, "");
+    if (!h) return "";
+    try { h = decodeURIComponent(h); } catch (e) {}
+    return normTok(h);
+  }
+  var fromHash = hashToken();
+  var saved = normTok(token());
+  if (fromHash) {
+    $("tk").value = fromHash;
+    /* 立刻把地址栏里的令牌抹掉，免得截图 / 分享链接时带出去 */
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    boot(fromHash);
+  } else if (saved) boot(saved);
   else {
     $("gst").textContent = "令牌只存在这台设备的浏览器里，不会上传到任何地方。";
     try { $("tk").focus(); } catch (e) {}
