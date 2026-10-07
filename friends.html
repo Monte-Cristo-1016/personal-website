@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贰 · 同好 | cyc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/vn.css">
+<link rel="stylesheet" href="assets/chat.css">
+<style>
+  /* 本页专属：场景切换（默认 = 日常的卧室） */
+  .vn-bg {
+    background-image: url("assets/room.webp");
+    --vn-bg-pos: 50% 58%;
+    --vn-bg-filter: saturate(1.06) brightness(1.03);
+  }
+
+  /* 场景切换按钮组（开场白说完后出现） */
+  .vn-scenes { margin-top: 14px; }
+  .vn-scene-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .vn-scene-btn {
+    padding: 7px 17px;
+    font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+    font-size: clamp(12.5px, 1.3vw, 14px);
+    letter-spacing: .16em;
+    text-indent: .16em;
+    cursor: pointer;
+    color: #f7ead6;
+    /* 胶囊 + 渐变描边，替掉方形实线框 */
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background-image:
+      linear-gradient(180deg, rgba(16, 28, 64, .42) 0%, rgba(8, 15, 38, .48) 100%),
+      linear-gradient(124deg,
+        rgba(246, 214, 170, .52) 0%,
+        rgba(246, 214, 170, .14) 36%,
+        rgba(150, 186, 228, .28) 68%,
+        rgba(246, 214, 170, .44) 100%);
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 4px 14px rgba(4, 6, 18, .30), inset 0 1px 0 rgba(255, 246, 228, .09);
+    transition: transform .26s cubic-bezier(.2, .9, .3, 1), box-shadow .26s ease,
+                color .26s ease, background-image .26s ease;
+  }
+  .vn-scene-btn:hover {
+    color: #fff6e6;
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 26px rgba(4, 6, 18, .44),
+      0 0 18px rgba(246, 214, 170, .24),
+      inset 0 1px 0 rgba(255, 246, 228, .16);
+  }
+  .vn-scene-btn.on {
+    color: #2a1c10;
+    /* 选中态：整颗暖金胶囊 + 外发光，不再是「金底方块」 */
+    background-image: linear-gradient(174deg,
+      #fdf3dd 0%, #f8e0b4 38%, #eac68c 70%, #f6dfb6 100%);
+    background-origin: border-box;
+    background-clip: border-box;
+    box-shadow:
+      0 8px 22px rgba(4, 6, 18, .42),
+      0 0 22px rgba(246, 214, 170, .38),
+      inset 0 1px 0 rgba(255, 255, 255, .7);
+    transform: none;
+  }
+  @media (max-width: 640px) {
+    .vn-scenes { margin-top: 10px; }
+    .vn-scene-btn { padding: 6px 12px; font-size: 12px; letter-spacing: .1em; text-indent: .1em; }
+  }
+
+  /* 本页的话题输入区：话题条从「窗口标题」变成「输入条的脚注」，
+     所以外边距反过来（顶部 10、底部 0），别删 */
+  .vn-compose .vn-topicbar { margin: 10px 0 0; }
+</style>
+</head>
+<body data-avatar="calm">
+<div class="vn-bg" role="img" aria-label="午后的卧室，阳光落在木地板上"></div>
+
+<header class="vn-top">
+  <span class="vn-chapter">贰 · 同好</span>
+  <a class="vn-back" href="index.html"
+     onclick="VNgo('index.html','序章','&quot;cyc&quot;');return false;">← 返回标题</a>
+</header>
+
+<section class="vn-scene">
+  <h1 class="vn-title">同好</h1>
+  <span class="vn-rule"></span>
+</section>
+
+<div class="vn-dialog">
+  <span class="vn-name">cyc</span>
+  <p class="vn-text" data-moods="calm|think|smile" data-lines="这些是我的爱好。我喜欢找同好的人，有共同话题的话就太好了。|好像有很多方向呢。我混的圈子说白了也不少。呃，应该说挺多的吧。|总之，先看一看吧？|但是ai总是训不出我自己和别人找到共同话题时候的新鲜感啊，也记不全我的爱好。所以也不妨讲一讲你自己吧。"></p>
+
+  <div class="vn-reveal vn-scenes">
+    <div class="vn-scene-btns" role="group" aria-label="切换背景场景">
+      <button class="vn-scene-btn" type="button" data-scene="game" aria-pressed="false">游戏</button>
+      <button class="vn-scene-btn" type="button" data-scene="sport" aria-pressed="false">运动</button>
+      <button class="vn-scene-btn on" type="button" data-scene="daily" aria-pressed="true">日常</button>
+      <button class="vn-scene-btn" type="button" data-scene="study" aria-pressed="false">学习</button>
+    </div>
+  </div>
+
+  <div class="vn-reveal">
+    <div class="vn-choices">
+      <a class="vn-choice" href="chat.html"
+         onclick="VNgo('chat.html','叁','对话');return false;">叁 · 对话 →</a>
+      <a class="vn-choice" href="contact.html"
+         onclick="VNgo('contact.html','肆','联系');return false;">肆 · 联系 →</a>
+      <a class="vn-choice" href="index.html"
+         onclick="VNgo('index.html','序章','&quot;cyc&quot;');return false;">← 回到标题</a>
+    </div>
+  </div>
+
+  <span class="vn-next">▼ 继续</span>
+</div>
+
+<!-- 话题输入区：点了某个方向才从顶上出现（输入框 / 快捷问 / 正在聊的方向 / 换个方向）。
+     和叁同款：标题让位到顶上这一条，下面只留单纯的对话记录。 -->
+<div class="vn-compose vn-compose-topic" id="vn-compose" hidden>
+  <form class="vn-row" id="vn-form" autocomplete="off">
+    <input class="vn-input" id="vn-q" name="q" type="text" maxlength="500"
+           placeholder="就这个方向，随便问点什么……（Enter 发送）" aria-label="你的问题">
+    <button class="vn-send" id="vn-send" type="submit">发送</button>
+  </form>
+
+  <div class="vn-asks" id="vn-asks"></div>
+
+  <div class="vn-topicbar">
+    <span class="vn-topicnow" id="vn-topicnow">日常</span>
+    <button class="vn-topicback" id="vn-topicback" type="button">← 换个方向</button>
+  </div>
+
+  <p class="vn-st" id="vn-st" role="status" aria-live="polite"></p>
+</div>
+
+<!-- 话题对话窗：只装对话记录 + 章节链接 -->
+<div class="vn-dialog vn-chat vn-chat-topic" id="vn-topic" hidden>
+  <span class="vn-name">cyc · 分身</span>
+
+  <div class="vn-log" id="vn-log" role="log" aria-live="polite"
+       aria-label="与分身聊这个话题的记录"></div>
+
+  <div class="vn-jump">
+    <a href="chat.html" onclick="VNgo('chat.html','叁','对话');return false;">叁 · 对话 →</a>
+    <a href="contact.html" onclick="VNgo('contact.html','肆','联系');return false;">肆 · 联系 →</a>
+  </div>
+</div>
+
+<div class="vn-curtain">
+  <span class="ct-chapter"></span>
+  <p class="ct-title"></p>
+  <span class="ct-rule"></span>
+</div>
+
+<script src="assets/vn.js"></script>
+<script src="assets/avatar.js"></script>
+<script src="assets/scenes.js"></script>
+<script src="assets/feedback.js" data-source="贰 · 同好"></script>
+<script src="assets/clone.js" data-boot="manual"></script>
+<script>
+  /* 贰的分身：点方向 → 换景 + 打开那个方向的对话窗（输入区跟着从顶上出现）；
+     「← 换个方向」再收回去。（clone.js 被要求 data-boot="manual"：它自己不开场，由这里决定开哪个话题） */
+  (function () {
+    "use strict";
+    var read = document.querySelector(".vn-dialog");   /* 上面那块：正文对话框 */
+    var box = document.getElementById("vn-topic");
+    var bar = document.getElementById("vn-compose");
+    var now = document.getElementById("vn-topicnow");
+    var back = document.getElementById("vn-topicback");
+    var q = document.getElementById("vn-q");
+    if (!read || !box || !bar || !now || !back || !window.VNclone) return;
+
+    /* 输入区在页面顶部，它一出现就压住立绘的头顶 —— 让 vn.js 重新算一次让位 */
+    function refit() {
+      window.dispatchEvent(new Event("resize"));
+    }
+
+    window.VNopenTopic = function (key) {
+      var t = window.VNclone.topics[key];
+      if (!t) return;
+      now.textContent = t.label;
+      read.hidden = true;
+      bar.hidden = false;
+      box.hidden = false;
+      window.VNclone.openTopic(key);
+      refit();
+      try { q.focus({ preventScroll: true }); } catch (e) {}
+    };
+
+    back.addEventListener("click", function () {
+      box.hidden = true;
+      bar.hidden = true;
+      read.hidden = false;
+      refit();
+      try { q.blur(); } catch (e) {}
+    });
+  })();
+</script>
+</body>
+</html>

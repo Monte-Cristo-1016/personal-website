@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>肆 · 联系 | cyc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/vn.css">
+<style>
+  /* 本页专属：落幕 · 暮色金光时段 */
+  .vn-bg {
+    background-image: url("assets/hero-sky.png");
+    --vn-bg-pos: 46% 58%;
+    --vn-bg-filter: saturate(1.1) brightness(.8) hue-rotate(-4deg);
+  }
+  /* 联系方式列表（VN 选项样式） */
+  .vn-contact { display: grid; gap: 9px; }
+  .vn-contact .vn-choice {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 18px; width: 100%;
+  }
+  .vn-contact .k {
+    font-size: 12px; letter-spacing: .2em; color: rgba(246, 214, 170, .78);
+  }
+  .vn-contact .v { letter-spacing: .05em; color: #f7ead6; }
+  .vn-note { margin: 10px 0 0; font-size: 12px; letter-spacing: .1em; color: rgba(246, 214, 170, .62); }
+  /* 矮视口把正文块的保底高度收一点：这一页的卡片底下还压着联系方式列表，
+     7.4em 的保底会把卡片顶上去压住立绘的嘴（320x568 只剩 3px）；这页每句话都不长，
+     收到 4.6em 也不会打字打到一半跳版。只影响本页。 */
+  @media (max-height: 640px) {
+    .vn-dialog .vn-text { min-height: 4.6em; }
+  }
+</style>
+</head>
+<body data-avatar="calm">
+<div class="vn-bg" role="img" aria-label="黄昏时分的新海诚风格天空：左上深蓝，中部橙粉色积云，右下地平线处金光耀眼并带镜头光斑"></div>
+
+<header class="vn-top">
+  <span class="vn-chapter">肆 · 联系</span>
+  <a class="vn-back" href="index.html"
+     onclick="VNgo('index.html','序章','&quot;cyc&quot;');return false;">← 返回标题</a>
+</header>
+
+<section class="vn-scene">
+  <h1 class="vn-title">联系</h1>
+  <span class="vn-rule"></span>
+</section>
+
+<div class="vn-dialog">
+  <span class="vn-name">cyc</span>
+  <p class="vn-text" data-moods="calm|smile|happy" data-lines="个人网页只是一部分哦。想真的认识我的话，可以通过这些：|QQ邮箱:3484991466@qq.com ,微信：cyc20080310 ,qq的话就是邮箱的数字部分了。b站: @_OoLoLoO_|希望能愉快地再见到你。"></p>
+
+  <div class="vn-reveal">
+    <div class="vn-contact">
+      <a class="vn-choice" href="3484991466@qq.com">
+        <span class="k">邮箱 EMAIL</span>
+        <span class="v">3484991466@qq.com</span>
+      </a>
+      <a class="vn-choice" href="https://github.com/Monte-Cristo-1016" target="_blank" rel="noopener">
+        <span class="k">仓库 GITHUB</span>
+        <span class="v">github.com/Monte-Cristo-1016</span>
+      </a>
+      <a class="vn-choice" href="#" data-vn-feedback>
+        <span class="k">留言 MESSAGE</span>
+        <span class="v">点这里直接写给我 →</span>
+      </a>
+    </div>
+    <p class="vn-note">（当你走到我的终点时，能为我献上一束花吗）</p>
+
+    <div class="vn-choices">
+      <a class="vn-choice" href="index.html"
+         onclick="VNgo('index.html','序章','&quot;cyc&quot;');return false;">← 回到标题</a>
+    </div>
+  </div>
+
+  <span class="vn-next">▼ 继续</span>
+</div>
+
+<div class="vn-curtain">
+  <span class="ct-chapter"></span>
+  <p class="ct-title"></p>
+  <span class="ct-rule"></span>
+</div>
+
+<script src="assets/vn.js"></script>
+<script src="assets/avatar.js"></script>
+<script src="assets/feedback.js" data-source="肆 · 联系"></script>
+</body>
+</html>

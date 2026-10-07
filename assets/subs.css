@@ -1,0 +1,129 @@
+/* ============================================================
+   子页面共享样式：承接首页「晚霞 + 明朝体 + 金线」视觉语言
+   由 about / friends / chat / contact 四个页面共用
+   ============================================================ */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #16233d;
+  color: #f2e8dc;
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans SC", "PingFang SC", sans-serif;
+  overflow-x: hidden;
+}
+
+/* 背景：与首页同一张晚霞图 + 暗化遮罩，保证文字可读 */
+.sub-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: #16233d;
+  background-image: url("hero-scene.webp");
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  background-size: cover;
+}
+.sub-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg,
+    rgba(10, 16, 34, .58) 0%, rgba(10, 16, 34, .74) 100%);
+}
+
+/* 内容块 */
+.sub-wrap {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 680px);
+  text-align: center;
+}
+
+/* 标题：与首页同一套明朝体白色渐变 */
+.sub-title {
+  margin: 0 0 10px;
+  font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP",
+               "MS PMincho", "SimSun", "Songti SC", serif;
+  font-weight: 700;
+  font-size: clamp(30px, 5vw, 52px);
+  letter-spacing: .16em;
+  text-indent: .16em;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fdf1e6 62%, #f9e7e0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 14px rgba(10, 8, 26, .7));
+}
+
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .sub-title { color: #f7d9ae; background-image: none; }
+}
+
+/* 标题下的短金线（居中，两端渐隐） */
+.sub-rule {
+  display: block;
+  width: 172px;
+  height: 1px;
+  margin: 0 auto clamp(22px, 4vh, 34px);
+  background-image: linear-gradient(90deg,
+    rgba(246, 214, 170, 0), rgba(246, 214, 170, .82) 50%, rgba(246, 214, 170, 0));
+}
+
+/* 正文占位卡片 */
+.sub-body {
+  padding: clamp(22px, 4vh, 36px) clamp(20px, 4vw, 36px);
+  border: 1px solid rgba(246, 214, 170, .28);
+  background-color: rgba(9, 20, 52, .34);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  font-size: clamp(14px, 1.5vw, 16px);
+  line-height: 2;
+  color: rgba(242, 232, 220, .86);
+}
+.sub-body p { margin: 0 0 .8em; }
+.sub-body p:last-child { margin-bottom: 0; }
+.sub-hint {
+  margin-top: 14px;
+  font-size: 13px;
+  letter-spacing: .08em;
+  color: rgba(246, 214, 170, .6);
+}
+
+/* 返回首页入口 */
+.sub-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .6em;
+  margin-top: clamp(22px, 4vh, 34px);
+  padding: 10px 22px;
+  text-decoration: none;
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: 14px;
+  letter-spacing: .22em;
+  text-indent: .22em;
+  color: #f7ead6;
+  border: 1px solid rgba(246, 214, 170, .45);
+  transition: background-color .26s ease, border-color .26s ease,
+              color .26s ease, transform .26s ease;
+}
+.sub-back:hover {
+  background-color: rgba(246, 214, 170, .12);
+  border-color: rgba(246, 214, 170, .75);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+.sub-back:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(255, 216, 166, .85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sub-back { transition: none; }
+  .sub-back:hover { transform: none; }
+}

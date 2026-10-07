@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#061024">
+<title>后台 | cyc</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{
+    --gold:#f6d6aa; --ink:#f5eee4; --line:rgba(246,214,170,.22);
+    --pad:clamp(12px,4.2vw,22px); --tap:44px; --maxw:760px;
+  }
+  *{ box-sizing:border-box; }
+  html{ -webkit-text-size-adjust:100%; }
+  body{
+    margin:0; min-height:100vh; color:var(--ink); font-size:15px;
+    font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN","MS PMincho","SimSun",Georgia,serif;
+    background-color:#061024;
+    background-image:linear-gradient(180deg,#0a1836 0%,#061024 55%,#040a18 100%);
+    background-attachment:fixed; -webkit-font-smoothing:antialiased;
+    padding-bottom:calc(26px + env(safe-area-inset-bottom));
+    overflow-wrap:break-word;
+  }
+  .col{ max-width:var(--maxw); margin:0 auto; padding:0 var(--pad); }
+
+  /* ---------- 顶部（吸顶：标题 + 页签） ---------- */
+  .top{
+    position:sticky; top:0; z-index:9;
+    background-color:rgba(6,16,36,.9);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .hdr{ display:flex; align-items:center; gap:10px; min-height:52px; padding-top:6px; }
+  .hdr b{ font-size:17px; font-weight:400; letter-spacing:.16em; }
+  .ver{ font-size:11px; letter-spacing:.08em; padding:2px 9px; border-radius:999px;
+    border:1px solid var(--line); color:rgba(246,214,170,.62); white-space:nowrap; }
+  .ver.new{ color:#a9e6b8; border-color:rgba(169,230,184,.42); }
+  .ver.old{ color:#ffb39c; border-color:rgba(255,179,156,.42); }
+  .hdr .sp{ flex:1; }
+  .tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding-bottom:8px; }
+  .tabs button{
+    min-height:var(--tap); padding:5px 4px; cursor:pointer; font:inherit; font-size:12.5px;
+    letter-spacing:.06em; color:rgba(246,214,170,.72); background-color:transparent;
+    border:1px solid transparent; border-radius:12px; transition:color .2s,border-color .2s,background-color .2s;
+  }
+  .tabs button.on{ color:#fff3dd; border-color:rgba(246,214,170,.5); background-color:rgba(18,30,64,.62); }
+  .tabs button i{ font-style:normal; font-size:10.5px; letter-spacing:0; opacity:.75; margin-left:2px; }
+  .tabs button.hot i{ color:#ffe6b8; opacity:1; }
+
+  /* ---------- 按钮 ---------- */
+  .btn{
+    cursor:pointer; font:inherit; font-size:13px; letter-spacing:.08em;
+    min-height:var(--tap); padding:9px 16px; color:rgba(246,214,170,.88);
+    border:1px solid rgba(246,214,170,.34); border-radius:999px; background-color:transparent;
+    transition:color .2s,border-color .2s,background-color .2s,opacity .2s;
+  }
+  .btn:hover{ color:#fff3dd; border-color:rgba(246,214,170,.72); background-color:rgba(18,30,64,.55); }
+  .btn:disabled{ opacity:.45; cursor:progress; }
+  .btn.primary{ color:#2a1c10; border-color:transparent;
+    background-image:linear-gradient(174deg,#fdf3dd 0%,#f8e0b4 38%,#eac68c 70%,#f6dfb6 100%); }
+  .btn.danger{ color:#ffc7b4; border-color:rgba(255,179,156,.42); }
+  .btn.danger:hover{ color:#fff; border-color:rgba(255,179,156,.9); background-color:rgba(84,26,20,.5); }
+  .btn.sm{ min-height:40px; padding:6px 13px; font-size:12px; }
+  .acts{ display:grid; grid-template-columns:repeat(auto-fit,minmax(104px,1fr)); gap:8px; margin-top:10px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .chip{ cursor:pointer; font:inherit; font-size:12.5px; line-height:1.5; max-width:100%;
+    min-height:40px; padding:9px 14px; border-radius:999px; text-align:left;
+    color:rgba(245,238,228,.9); background-color:rgba(9,20,52,.45);
+    border:1px solid rgba(246,214,170,.26); }
+  .chip.hot{ color:#fff3dd; border-color:rgba(246,214,170,.62); }
+  .chip em{ font-style:normal; margin-left:6px; font-size:11px; color:rgba(246,214,170,.72); }
+
+  /* ---------- 面板与卡片 ---------- */
+  .panel{ margin-top:16px; border:1px solid transparent; border-radius:18px; padding:var(--pad);
+    background-color:rgba(9,20,52,.5);
+    background-image:linear-gradient(168deg,rgba(20,34,74,.6) 0%,rgba(9,16,40,.56) 62%,rgba(14,23,54,.6) 100%),
+      linear-gradient(148deg,rgba(255,240,214,.46) 0%,rgba(246,214,170,.15) 26%,rgba(132,170,220,.15) 58%,rgba(246,214,170,.3) 100%);
+    background-origin:padding-box,border-box; background-clip:padding-box,border-box;
+    box-shadow:0 14px 40px rgba(4,6,18,.4),inset 0 1px 0 rgba(255,246,228,.09); }
+  .card{ border:1px solid var(--line); border-radius:14px; padding:12px 13px;
+    background-color:rgba(9,20,52,.42); margin-top:12px; }
+  .card:first-child{ margin-top:0; }
+  .card.unread{ border-color:rgba(246,214,170,.55); background-color:rgba(14,26,60,.6); }
+  .ch{ display:flex; flex-wrap:wrap; gap:6px 10px; align-items:baseline;
+    font-size:11.5px; letter-spacing:.06em; color:rgba(246,214,170,.56); margin-bottom:9px; }
+  .ch .who{ color:rgba(246,214,170,.85); font-size:12.5px; letter-spacing:.1em; }
+  .ch .dot{ width:7px; height:7px; border-radius:50%; background:#ffe6b8; display:inline-block; }
+  .tx{ font-size:14px; line-height:1.85; word-break:break-word; }
+
+  /* 气泡（沿用记录页的两色，对比度已验证） */
+  .b{ padding:9px 13px; white-space:pre-wrap; word-break:break-word;
+    font-size:14px; line-height:1.8; border:1px solid transparent; margin-top:7px; }
+  .b.me{ color:#2a1c10; border-color:rgba(255,240,214,.85); border-radius:15px 15px 5px 15px;
+    background-image:linear-gradient(168deg,#fdf3dd 0%,#f6dcae 48%,#e9c88f 100%);
+    box-shadow:0 5px 16px rgba(4,6,18,.28),inset 0 1px 0 rgba(255,255,255,.6); }
+  .b.clone{ color:rgba(245,238,228,.95); border-color:var(--line); border-radius:15px 15px 15px 5px;
+    background-image:linear-gradient(162deg,rgba(24,38,82,.6) 0%,rgba(11,19,46,.56) 100%);
+    box-shadow:0 5px 16px rgba(4,6,18,.28),inset 0 1px 0 rgba(255,246,228,.08); }
+  .b.me .lb,.b.clone .lb{ display:block; font-size:10.5px; letter-spacing:.14em; opacity:.6; margin-bottom:3px; }
+
+  .tm{ font-size:11px; letter-spacing:.08em; color:rgba(246,214,170,.44); }
+  .tag{ display:inline-block; padding:2px 9px; border-radius:999px; font-size:11px; letter-spacing:.04em;
+    color:rgba(246,214,170,.82); border:1px solid rgba(246,214,170,.3); }
+  .dim{ opacity:.42; }
+  .strike{ text-decoration:line-through; }
+  .hint{ font-size:12.5px; line-height:1.85; color:rgba(246,214,170,.62); margin:10px 0 0; }
+  .hint.err{ color:#ffb39c; }
+  .hint.ok{ color:#a9e6b8; }
+  .hint b{ font-weight:400; color:#ffe6bd; }
+  h2{ font-size:12.5px; font-weight:400; letter-spacing:.2em; color:rgba(246,214,170,.7); margin:22px 0 4px; }
+  h2:first-child{ margin-top:2px; }
+  code{ font-family:Consolas,Menlo,monospace; font-size:12.5px; color:#ffe6bd; word-break:break-all; }
+
+  /* 会话折叠 */
+  details{ border-top:1px solid rgba(246,214,170,.14); padding-top:12px; margin-top:12px; }
+  details:first-of-type{ border-top:0; margin-top:0; padding-top:0; }
+  summary{ cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; gap:8px; align-items:baseline;
+    font-size:12.5px; color:rgba(246,214,170,.75); min-height:var(--tap); align-content:center; }
+  summary::-webkit-details-marker{ display:none; }
+  summary::before{ content:"\25b8"; color:rgba(246,214,170,.5); }
+  details[open] summary::before{ content:"\25be"; }
+  summary .sp{ flex:1; }
+  .turn{ margin:14px 0 0; padding-top:4px; }
+
+  /* 输入 */
+  input,textarea,select{ font:inherit; font-size:15px; color:var(--ink);
+    background-color:rgba(6,12,30,.6); border:1px solid rgba(246,214,170,.3);
+    border-radius:12px; outline:none; padding:11px 13px; width:100%;
+    transition:border-color .2s,box-shadow .2s; }
+  input:focus,textarea:focus,select:focus{ border-color:rgba(246,214,170,.72); box-shadow:0 0 0 3px rgba(246,214,170,.13); }
+  textarea{ min-height:88px; line-height:1.8; resize:vertical; }
+  .srch{ margin:0 0 12px; border-radius:999px; }
+  .field{ display:grid; gap:6px; margin-top:11px; }
+  .field > span{ font-size:12px; letter-spacing:.12em; color:rgba(246,214,170,.72); }
+  .ed{ margin-top:12px; padding:12px; border-radius:14px;
+    border:1px solid rgba(246,214,170,.3); background-color:rgba(6,12,30,.55); }
+
+  /* 门禁 */
+  .gate{ max-width:440px; margin:0 auto; padding:14vh var(--pad) 0; }
+  .gate h1{ margin:0 0 6px; font-size:23px; font-weight:400; letter-spacing:.16em; }
+  .gate .sub{ margin:0 0 18px; font-size:12px; letter-spacing:.14em; color:rgba(246,214,170,.6); }
+  .gate .rule{ display:block; width:66px; height:1px; margin:12px 0 18px;
+    background-image:linear-gradient(90deg,var(--gold),transparent); }
+
+  /* 提示条 */
+  .toast{ position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(14px + env(safe-area-inset-bottom)); z-index:30;
+    width:min(92vw,520px); padding:11px 15px; border-radius:12px; font-size:13px; line-height:1.7;
+    color:#f7efe3; background-color:rgba(12,22,50,.96); border:1px solid rgba(246,214,170,.36);
+    box-shadow:0 12px 34px rgba(0,0,0,.5); }
+  .toast.ok{ border-color:rgba(169,230,184,.5); }
+  .toast.err{ border-color:rgba(255,179,156,.55); }
+  .foot{ margin:26px 0 0; font-size:12px; letter-spacing:.08em; color:rgba(246,214,170,.45); }
+  .foot a{ color:rgba(246,214,170,.7); text-decoration:none; }
+  .foot a:hover{ color:#fff3dd; }
+  .empty{ padding:22px 0; font-size:13.5px; line-height:1.95; color:rgba(246,214,170,.6); }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+<!-- ============ 令牌门禁 ============ -->
+<div class="gate" id="gate">
+  <h1>后台</h1>
+  <p class="sub">对话记录 · 留言 · 分身知识库</p>
+  <span class="rule"></span>
+  <div class="field">
+    <span>查看令牌</span>
+    <input id="tk" type="password" placeholder="输入令牌" autocomplete="current-password" enterkeyhint="go">
+  </div>
+  <div class="acts">
+    <button class="btn primary" id="go" type="button">进入</button>
+  </div>
+  <p class="hint" id="gst">令牌只存在这台设备的浏览器里，不会上传到任何地方。</p>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="app" hidden>
+  <div class="top">
+    <div class="col">
+      <div class="hdr">
+        <b>后台</b>
+        <span class="ver" id="ver">…</span>
+        <span class="sp"></span>
+        <button class="btn sm" id="rf" type="button">刷新</button>
+        <button class="btn sm" id="clr" type="button">换令牌</button>
+      </div>
+      <div class="tabs" id="tabs">
+        <button type="button" data-tab="cand" class="on">待审<i id="n-cand">—</i></button>
+        <button type="button" data-tab="log">记录<i id="n-log">—</i></button>
+        <button type="button" data-tab="msg">留言<i id="n-msg">—</i></button>
+        <button type="button" data-tab="kb">知识库<i id="n-kb">—</i></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="panel" id="v-cand"></div>
+    <div class="panel" id="v-log" hidden></div>
+    <div class="panel" id="v-msg" hidden></div>
+    <div class="panel" id="v-kb" hidden></div>
+    <p class="foot">
+      <a href="index.html">主页</a> ·
+      <a href="chat.html">对话</a> ·
+      改这里 = 训练分身（最多 60 秒生效，不用重新部署）
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ================= 配置 ================= */
+  var SB_URL = "https://zhklmnxtdzhkouwfyghr.supabase.co";
+  var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20";
+  var FN_URL = SB_URL + "/functions/v1/vn_clone";
+  var TKEY = "vn_logs_token";              /* 与旧的 logs.html 共用一个令牌，换过去不用重新输入 */
+  var H = { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json" };
+  var KB_TABLE = { faq: "clone_faq", persona: "clone_persona" };
+  var KB_NAME = { fact: "资料", voice: "口吻", rule: "规矩", opening: "开场白", suggestion: "快捷提问" };
+  var FN_HINT = "这个操作要新版函数：Supabase → Edge Functions → vn_clone → 粘贴 supabase/functions/vn-clone/index.ts 全文 → Deploy（一次就够）。";
+  var SQL_HINT = "审核函数还没建：去 Supabase → SQL Editor 跑一遍 supabase/knowledge_review.sql，跑完刷新本页。";
+
+  /* ================= 工具箱 ================= */
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (txt != null) d.textContent = txt;
+    return d;
+  }
+  function token() { try { return localStorage.getItem(TKEY) || ""; } catch (e) { return ""; } }
+  function setToken(v) {
+    try { if (v) localStorage.setItem(TKEY, v); else localStorage.removeItem(TKEY); } catch (e) {}
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function fmt(ts) {
+    var d = new Date(ts);
+    if (!d || isNaN(d.getTime())) return "—";
+    return (d.getMonth() + 1) + "/" + d.getDate() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function fmtFull(ts) {
+    var d = new Date(ts);
+    if (!d || isNaN(d.getTime())) return "—";
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " +
+      pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function norm(q) {
+    return String(q || "").replace(/[\s\u3000]+/g, "")
+      .replace(/[，。！？、,.!?~～…；;：:""''「」（）()【】\[\]—-]+/g, "").toLowerCase();
+  }
+  /* page 字段可能是一整条路径 → 只留最后一段，别把版面撑破 */
+  function pg(p) {
+    var s = String(p || "");
+    if (!s) return "";
+    s = s.replace(/[?#].*$/, "").replace(/\\/g, "/").replace(/\/+$/, "");
+    var seg = s.split("/").pop() || s;
+    return seg.length > 24 ? seg.slice(0, 24) + "…" : seg;
+  }
+  var toastT = 0;
+  function toast(msg, kind) {
+    var t = $("toast");
+    t.textContent = msg || "";
+    t.className = "toast" + (kind ? " " + kind : "");
+    t.hidden = false;
+    clearTimeout(toastT);
+    toastT = setTimeout(function () { t.hidden = true; }, kind === "err" ? 7000 : 2600);
+  }
+  function busy(node, on) {
+    var bs = node.querySelectorAll("button");
+    for (var i = 0; i < bs.length; i++) bs[i].disabled = !!on;
+  }
+  function isMissingFn(m) {
+    return /messages|Edge Function|404|400|503|Failed to fetch|NetworkError/i.test(String(m || ""));
+  }
+
+  /* ================= 数据通道 ================= */
+  /* 读：走数据库 RPC（令牌校验在数据库里） */
+  async function rpc(name, body) {
+    var r = await fetch(SB_URL + "/rest/v1/rpc/" + name,
+      { method: "POST", headers: H, body: JSON.stringify(body) });
+    var t = await r.text();
+    if (!r.ok) throw new Error(t.slice(0, 300) || ("HTTP " + r.status));
+    try { return JSON.parse(t || "null"); } catch (e) { return null; }
+  }
+  /* 写 / 删 / 看留言：走 Edge Function 的 admin 动作（service role） */
+  async function admin(op, extra) {
+    var body = { action: "admin", token: token(), op: op };
+    if (extra) for (var k in extra) body[k] = extra[k];
+    var r = await fetch(FN_URL, { method: "POST", headers: H, body: JSON.stringify(body) });
+    var t = await r.text();
+    var j = null;
+    try { j = JSON.parse(t || "null"); } catch (e) {}
+    if (!r.ok || !j || j.ok === false) {
+      var msg = (j && j.error) || t.slice(0, 200) || ("HTTP " + r.status);
+      var e2 = new Error(msg);
+      if (!j || !j.error || /messages|HTTP 400|HTTP 404|HTTP 503/i.test(msg)) e2.fnOld = true;
+      throw e2;
+    }
+    return j;
+  }
+
+  /* ================= 状态 ================= */
+  var S = { rows: [], kb: null, msgs: null, fn: 0, tab: "cand", q: "" };
+
+  function diag(e) {
+    var m = String((e && e.message) || e);
+    if (/BAD_TOKEN/i.test(m)) return "令牌不对 —— 点「换令牌」重新输入。";
+    if (e && e.fnOld) return FN_HINT;
+    if (/PGRST202|Could not find the function|schema cache|does not exist/i.test(m)) return SQL_HINT;
+    return "出错了：" + m;
+  }
+
+  /* ================= 分组：把一行行记录拼成「一轮问答」 ================= */
+  function group(rows) {
+    var m = {};
+    rows.forEach(function (r) { (m[r.session_id] = m[r.session_id] || []).push(r); });
+    var out = [];
+    Object.keys(m).forEach(function (id) {
+      var list = m[id].slice().sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); });
+      var turns = [], cur = null;
+      list.forEach(function (r) {
+        if (r.role === "me") {
+          cur = { q: r.content, qt: r.created_at, a: "", at: "", qid: r.id, ids: [r.id], row: r };
+          turns.push(cur);
+        } else if (r.role === "clone") {
+          if (cur && !cur.a) {
+            cur.a = r.content; cur.at = r.created_at; cur.ids.push(r.id); cur.arow = r;
+          } else {
+            turns.push({ q: "", qt: r.created_at, a: r.content, at: r.created_at, ids: [r.id], arow: r });
+          }
+        }
+      });
+      out.push({ id: id, page: (list[0] || {}).page || "", turns: turns,
+        last: (list[list.length - 1] || {}).created_at });
+    });
+    out.sort(function (a, b) { return new Date(b.last) - new Date(a.last); });
+    return out;
+  }
+  function flatTurns() {
+    var out = [];
+    group(S.rows).forEach(function (s) {
+      s.turns.forEach(function (t) { out.push({ t: t, page: s.page }); });
+    });
+    return out;
+  }
+  function rowMap() {
+    var m = {};
+    S.rows.forEach(function (r) { m[r.id] = r; });
+    return m;
+  }
+  /* 待审 = 有问有答、还没处理过的轮次；同一问句只留最新一条 */
+  function candidates() {
+    var map = rowMap(), seen = {}, out = [];
+    flatTurns().filter(function (o) { return o.t.q && o.t.a && o.t.qid != null; })
+      .sort(function (a, b) { return new Date(b.t.qt) - new Date(a.t.qt); })
+      .forEach(function (o) {
+        var hit = map[o.t.qid] || {};
+        if (hit.reviewed) return;
+        var k = norm(o.t.q) || o.t.q;
+        if (seen[k]) return;
+        seen[k] = 1;
+        out.push(o);
+      });
+    return out.slice(0, 40);
+  }
+
+  /* ================= 一轮对话的卡片（待审 / 记录 共用） ================= */
+  function turnCard(o, opts) {
+    var t = o.t;
+    var card = el("div", "card");
+    var hd = el("div", "ch");
+    hd.appendChild(el("span", "tm", fmt(t.qt) + (o.page ? " · " + pg(o.page) : "")));
+    var hit = rowMap()[t.qid] || {};
+    if (hit.promoted_table) hd.appendChild(el("span", "tag", "已收录"));
+    else if (hit.reviewed) hd.appendChild(el("span", "tag", "已跳过"));
+    hd.appendChild(el("span", "sp"));
+    card.appendChild(hd);
+
+    if (t.q) {
+      var bq = el("div", "b me");
+      bq.appendChild(el("span", "lb", "访客"));
+      bq.appendChild(document.createTextNode(t.q));
+      card.appendChild(bq);
+    }
+    if (t.a) {
+      var ba = el("div", "b clone");
+      ba.appendChild(el("span", "lb", "分身"));
+      ba.appendChild(document.createTextNode(t.a));
+      card.appendChild(ba);
+    }
+
+    var ed = el("div", "ed");
+    ed.hidden = true;
+    card.appendChild(ed);
+
+    var acts = el("div", "acts");
+    var bFaq = el("button", "btn sm", "收录为问答");
+    var bPer = el("button", "btn sm", "收录为资料");
+    var bDel = el("button", "btn sm danger", "删掉这轮");
+    [bFaq, bPer, bDel].forEach(function (b) { b.type = "button"; acts.appendChild(b); });
+    if (opts && opts.skip) {
+      var bSkip = el("button", "btn sm", "跳过");
+      bSkip.type = "button";
+      bSkip.addEventListener("click", function () {
+        act(card, function () { return rpc("promote_knowledge", { p_token: token(), p_target: "skip", p_log_id: t.qid }); },
+          "已跳过这轮。");
+      });
+      acts.appendChild(bSkip);
+    }
+    card.appendChild(acts);
+
+    bFaq.addEventListener("click", function () { editor(card, ed, { mode: "faq", turn: t }); });
+    bPer.addEventListener("click", function () { editor(card, ed, { mode: "persona", turn: t }); });
+    bDel.addEventListener("click", function () {
+      var n = t.ids.length;
+      if (!confirm("删掉这轮对话记录？（" + n + " 行，删了不可恢复）")) return;
+      act(card, function () { return admin("log_delete", { ids: t.ids }); }, "已删掉这轮记录。");
+    });
+    return card;
+  }
+
+  /* 收录 / 保存 / 删除 的统一包装：禁用按钮 → 跑 → 刷新 → 提示 */
+  function act(node, fn, okMsg) {
+    busy(node, true);
+    toast("处理中……");
+    fn().then(function () {
+      toast(okMsg, "ok");
+      return reload();
+    }).catch(function (e) {
+      busy(node, false);
+      toast(diag(e), "err");
+    });
+  }
+
+  /* ================= 编辑器：收录一轮 / 改一条 / 新增一条 ================= */
+  function txt(cls, val) {
+    var t = document.createElement("textarea");
+    if (cls) t.className = cls;
+    t.value = val || "";
+    return t;
+  }
+  function input(cls, val) {
+    var i = document.createElement("input");
+    i.type = "text";
+    if (cls) i.className = cls;
+    i.value = val || "";
+    return i;
+  }
+  function field(label, node) {
+    var d = el("div", "field");
+    d.appendChild(el("span", null, label));
+    d.appendChild(node);
+    return d;
+  }
+  function keySelect(val) {
+    var s = document.createElement("select");
+    ["fact", "voice", "rule", "opening", "suggestion"].forEach(function (k) {
+      var o = document.createElement("option");
+      o.value = k;
+      o.textContent = KB_NAME[k] + " —— " + { fact: "关于我的事实", voice: "我怎么说话", rule: "边界 / 禁忌",
+        opening: "进对话页看到的第一句", suggestion: "快捷提问按钮" }[k];
+      s.appendChild(o);
+    });
+    s.value = val || "fact";
+    return s;
+  }
+  /* opt: { mode:"faq"|"persona", turn?, row?, add? } */
+  function editor(card, ed, opt) {
+    var faq = opt.mode === "faq";
+    var isAdd = !!opt.add;
+    ed.textContent = "";
+    ed.hidden = false;
+
+    var src = opt.row || {};
+    var qI = input(null, isAdd ? "" : (src.question || (opt.turn && opt.turn.q) || ""));
+    var aT = txt(null, isAdd ? "" : (src.answer || (opt.turn && opt.turn.a) || ""));
+    var kS = keySelect(src.key || "fact");
+    var cT = txt(null, isAdd ? "" : (src.content || (opt.turn && opt.turn.a) || ""));
+    var sI = document.createElement("input");
+    sI.type = "number";
+    sI.inputMode = "numeric";
+    sI.value = String(isAdd ? 100 : (src.sort != null ? src.sort : 100));
+
+    if (faq) {
+      ed.appendChild(field("访客可能怎么问", qI));
+      ed.appendChild(field("照这个答", aT));
+    } else {
+      ed.appendChild(field("放进哪一类", kS));
+      ed.appendChild(field("内容", cT));
+    }
+    ed.appendChild(field("排序（小的在前）", sI));
+    ed.appendChild(el("p", "hint", faq
+      ? "问句写成访客真会用的说法就行，不用和刚才一模一样；答案里的事实别改。"
+      : "资料 = 关于你的事实；口吻 = 你说话的方式；规矩 = 不能说什么；开场白 / 快捷提问只在对话页用。"));
+
+    var save = el("button", "btn sm primary", isAdd ? "新增并生效" : "保存并生效");
+    var cancel = el("button", "btn sm", "取消");
+    save.type = "button"; cancel.type = "button";
+    var acts = el("div", "acts");
+    acts.appendChild(save); acts.appendChild(cancel);
+    ed.appendChild(acts);
+
+    cancel.addEventListener("click", function () { ed.hidden = true; ed.textContent = ""; });
+    save.addEventListener("click", function () {
+      var sort = parseInt(sI.value, 10);
+      if (isNaN(sort)) sort = 100;
+      var call;
+      if (opt.row) {                                   /* 改已有的那条 */
+        call = function () {
+          return admin("kb_update", faq
+            ? { target: KB_TABLE.faq, id: opt.row.id, question: qI.value, answer: aT.value, sort: sort }
+            : { target: KB_TABLE.persona, id: opt.row.id, key: kS.value, content: cT.value, sort: sort });
+        };
+      } else {                                          /* 收录一轮 / 凭空新增 */
+        var body = { p_token: token(), p_target: faq ? "faq" : "persona", p_sort: sort };
+        if (faq) { body.p_question = qI.value; body.p_answer = aT.value; }
+        else { body.p_key = kS.value; body.p_content = cT.value; }
+        if (opt.turn && opt.turn.qid != null) body.p_log_id = opt.turn.qid;
+        call = function () { return rpc("promote_knowledge", body); };
+      }
+      act(card, call, (faq ? "已存进「问答」" : "已存进「" + KB_NAME[kS.value] + "」") + " —— 最多 60 秒后分身就用上。");
+    });
+  }
+
+  /* ================= 视图 ①：待审 ================= */
+  /* 高频问题：同一句（去标点后）出现几次 —— 点一下就去「记录」里搜它 */
+  function hotQuestions() {
+    var n = {}, rep = {};
+    S.rows.forEach(function (r) {
+      if (r.role !== "me") return;
+      var k = norm(r.content) || r.content;
+      n[k] = (n[k] || 0) + 1;
+      if (!rep[k]) rep[k] = r.content;
+    });
+    return Object.keys(n).map(function (k) { return { n: n[k], t: rep[k] }; })
+      .sort(function (a, b) { return b.n - a.n; }).slice(0, 8);
+  }
+
+  function viewCand() {
+    var v = $("v-cand");
+    v.textContent = "";
+    v.appendChild(el("h2", null, "待你审核的对话"));
+    v.appendChild(el("p", "hint",
+      "下面这些轮次还没处理。点「收录为问答」或「收录为资料」→ 改好措辞 → 保存；不想要的点「跳过」或「删掉这轮」。只有你保存了才会生效 —— 分身不会自己学。"));
+
+    var hot = hotQuestions();
+    if (hot.length) {
+      v.appendChild(el("h2", null, "访客最常问的"));
+      var chips = el("div", "chips");
+      hot.forEach(function (o) {
+        var c = el("button", "chip" + (o.n > 1 ? " hot" : ""), o.t);
+        c.type = "button";
+        if (o.n > 1) c.appendChild(el("em", null, "×" + o.n));
+        c.addEventListener("click", function () { S.q = o.t; setTab("log"); });
+        chips.appendChild(c);
+      });
+      v.appendChild(chips);
+    }
+
+    var list = candidates();
+    if (!list.length) {
+      v.appendChild(el("p", "empty", S.rows.length
+        ? "没有待审的轮次了 —— 都处理过了。去「对话」页再聊两句，或看「记录」页。"
+        : "还没有记录。先去「对话」页聊两句再回来刷新。"));
+      return;
+    }
+    v.appendChild(el("h2", null, "待审轮次 " + list.length + " 条"));
+    list.forEach(function (o) { v.appendChild(turnCard(o, { skip: true })); });
+  }
+
+  /* 全部记录导出成纯文本（粘给自己 / 存档用） */
+  function allText() {
+    var buf = [];
+    group(S.rows).forEach(function (s) {
+      buf.push("===== " + fmt(s.last) + (s.page ? " · " + pg(s.page) : "") + " =====");
+      s.turns.forEach(function (t) {
+        if (t.q) buf.push("【" + fmt(t.qt) + "】访客：" + t.q);
+        if (t.a) buf.push("分身：" + t.a);
+      });
+      buf.push("");
+    });
+    return buf.join("\n");
+  }
+  function copyAll() {
+    var t = allText();
+    var done = function () { toast("已复制 " + t.length + " 字到剪贴板。", "ok"); };
+    var legacy = function () {
+      var ta = el("textarea");
+      ta.value = t;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      if (ok) done(); else toast("这个浏览器不给复制权限 —— 可以先全选再长按复制。", "err");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(done, legacy);
+      return;
+    }
+    legacy();
+  }
+
+  /* ================= 视图 ②：记录 ================= */
+  function viewLog() {
+    var v = $("v-log");
+    v.textContent = "";
+    var all = flatTurns().filter(function (o) { return o.t.q || o.t.a; });
+    var q = S.q.trim().toLowerCase();
+    var flt = all.filter(function (o) {
+      if (!q) return true;
+      return (o.t.q + " " + o.t.a + " " + (o.page || "")).toLowerCase().indexOf(q) >= 0;
+    }).sort(function (a, b) { return new Date(b.t.qt) - new Date(a.t.qt); });
+
+    var box = el("input", "srch");
+    box.type = "search";
+    box.placeholder = "搜内容 / 来源页面…";
+    box.value = S.q;
+    box.setAttribute("enterkeyhint", "search");
+    box.addEventListener("input", function () {
+      S.q = box.value;
+      var pos = box.selectionStart;
+      viewLog();
+      var nb = $("v-log").querySelector("input.srch");
+      if (nb) { nb.value = S.q; try { nb.focus(); nb.setSelectionRange(pos, pos); } catch (e) {} }
+    });
+    v.appendChild(box);
+
+    var sess = group(S.rows);
+    v.appendChild(el("p", "hint", "共 " + sess.length + " 段会话 / " + all.length + " 轮问答" +
+      (q ? "，筛出 " + flt.length + " 轮" : "") + "。每轮都能收录进分身，或直接删掉。"));
+
+    var bar = el("div", "acts");
+    var bCopy = el("button", "btn sm", "复制全部记录");
+    bCopy.type = "button";
+    bar.appendChild(bCopy);
+    v.appendChild(bar);
+    bCopy.addEventListener("click", copyAll);
+
+    if (!flt.length) {
+      v.appendChild(el("p", "empty", q ? "没有匹配的轮次。" : "还没有记录 —— 先去「对话」页聊两句。"));
+      return;
+    }
+    flt.forEach(function (o) { v.appendChild(turnCard(o, { skip: false })); });
+  }
+
+  /* ================= 视图 ③：留言 ================= */
+  function viewMsg() {
+    var v = $("v-msg");
+    v.textContent = "";
+    v.appendChild(el("h2", null, "访客留言"));
+    if (S.fn < 2) {
+      v.appendChild(el("p", "hint err", FN_HINT));
+      v.appendChild(el("p", "hint", "留言表开着行级安全：匿名只能写、读不到。所以看留言必须经过新版函数（用 service role key 读）。部署完刷新这一页就行。"));
+      return;
+    }
+    if (S.msgs === null) { v.appendChild(el("p", "hint", "读取中……")); return; }
+    if (!S.msgs.length) { v.appendChild(el("p", "empty", "还没有人留言。")); return; }
+    var unread = S.msgs.filter(function (m) { return !m.is_read; }).length;
+    v.appendChild(el("p", "hint", "共 " + S.msgs.length + " 条" + (unread ? "，其中 " + unread + " 条未读" : "，都读过了") + "。"));
+
+    S.msgs.forEach(function (m) {
+      var card = el("div", "card" + (m.is_read ? "" : " unread"));
+      var hd = el("div", "ch");
+      if (!m.is_read) hd.appendChild(el("span", "dot"));
+      hd.appendChild(el("span", "who", m.name || "匿名"));
+      hd.appendChild(el("span", "tm", fmtFull(m.created_at)));
+      if (m.source) hd.appendChild(el("span", "tag", pg(m.source)));
+      card.appendChild(hd);
+      card.appendChild(el("div", "tx", m.message || ""));
+
+      var acts = el("div", "acts");
+      var bRead = el("button", "btn sm", m.is_read ? "标为未读" : "标为已读");
+      var bDel = el("button", "btn sm danger", "删除");
+      bRead.type = "button"; bDel.type = "button";
+      acts.appendChild(bRead); acts.appendChild(bDel);
+      card.appendChild(acts);
+
+      bRead.addEventListener("click", function () {
+        act(card, function () { return admin("feedback_read", { ids: [m.id], read: !m.is_read }); },
+          m.is_read ? "已标为未读。" : "已标为已读。");
+      });
+      bDel.addEventListener("click", function () {
+        if (!confirm("删掉这条留言？删了不可恢复。")) return;
+        act(card, function () { return admin("feedback_delete", { ids: [m.id] }); }, "已删除。");
+      });
+      v.appendChild(card);
+    });
+  }
+
+  /* ================= 视图 ④：知识库 ================= */
+  function kbRow(o) {
+    var card = el("div", "card");
+    var hd = el("div", "ch");
+    hd.appendChild(el("span", "tag", o.tag));
+    hd.appendChild(el("span", "tm", "#" + o.id + " · 排序 " + o.sort));
+    card.appendChild(hd);
+    var tx = el("div", "tx" + (o.enabled ? "" : " dim strike"), o.text);
+    card.appendChild(tx);
+
+    var ed = el("div", "ed");
+    ed.hidden = true;
+    card.appendChild(ed);
+
+    var acts = el("div", "acts");
+    var bEdit = el("button", "btn sm", "编辑");
+    var bPow = el("button", "btn sm", o.enabled ? "停用" : "恢复");
+    var bDel = el("button", "btn sm danger", "删除");
+    [bEdit, bPow, bDel].forEach(function (b) { b.type = "button"; acts.appendChild(b); });
+    card.appendChild(acts);
+
+    bEdit.addEventListener("click", function () {
+      editor(card, ed, { mode: o.table === KB_TABLE.faq ? "faq" : "persona", row: o.raw });
+    });
+    bPow.addEventListener("click", function () {
+      act(card, function () {
+        return rpc("set_knowledge_enabled",
+          { p_token: token(), p_target: o.table, p_id: o.id, p_enabled: !o.enabled });
+      }, o.enabled ? "已停用 —— 最多 60 秒后分身不再用它。" : "已恢复。");
+    });
+    bDel.addEventListener("click", function () {
+      if (!confirm("删掉这条？这个是真删（要留痕就点「停用」）。")) return;
+      act(card, function () { return admin("kb_delete", { target: o.table, id: o.id }); }, "已删除。");
+    });
+    return card;
+  }
+
+  function viewKb() {
+    var v = $("v-kb");
+    v.textContent = "";
+    var bar = el("div", "acts");
+    var bAq = el("button", "btn sm", "＋ 新增问答");
+    var bAp = el("button", "btn sm", "＋ 新增资料");
+    bAq.type = "button"; bAp.type = "button";
+    bar.appendChild(bAq); bar.appendChild(bAp);
+    v.appendChild(bar);
+
+    if (S.kb === null) {
+      v.appendChild(el("p", "hint err", SQL_HINT));
+      return;
+    }
+    var ed = el("div", "ed");
+    ed.hidden = true;
+    v.appendChild(ed);
+    bAq.addEventListener("click", function () { editor(v, ed, { mode: "faq", add: true }); });
+    bAp.addEventListener("click", function () { editor(v, ed, { mode: "persona", add: true }); });
+
+    v.appendChild(el("p", "hint", "这里是你亲自收进去的条目，随时能改、能停用、能删。停用不删数据，来源那轮会退回待审。改完最多 60 秒生效。"));
+
+    var faq = [], per = [];
+    (S.kb.faq || []).forEach(function (f) {
+      faq.push({ table: KB_TABLE.faq, id: f.id, enabled: f.enabled, tag: "问答", sort: f.sort,
+        text: f.question + "  →  " + f.answer, raw: f });
+    });
+    (S.kb.persona || []).forEach(function (p) {
+      per.push({ table: KB_TABLE.persona, id: p.id, enabled: p.enabled, tag: KB_NAME[p.key] || p.key,
+        sort: p.sort, text: p.content, raw: p });
+    });
+    v.appendChild(el("h2", null, "问答（问到就照这个答）· " + faq.length + " 条"));
+    if (!faq.length) v.appendChild(el("p", "hint", "还没有问答条目。"));
+    faq.forEach(function (o) { v.appendChild(kbRow(o)); });
+    v.appendChild(el("h2", null, "档案（资料 / 口吻 / 规矩 / 开场白 / 快捷提问）· " + per.length + " 条"));
+    if (!per.length) v.appendChild(el("p", "hint", "还没有档案条目。"));
+    per.forEach(function (o) { v.appendChild(kbRow(o)); });
+  }
+
+  /* ================= 渲染 ================= */
+  function paintBar() {
+    var c = candidates().length;
+    var turns = flatTurns().filter(function (o) { return o.t.q || o.t.a; }).length;
+    var unread = S.msgs ? S.msgs.filter(function (m) { return !m.is_read; }).length : 0;
+    var kb = S.kb ? (S.kb.faq || []).length + (S.kb.persona || []).length : 0;
+    var nums = {
+      cand: c, log: turns,
+      /* 旧版函数读不到留言：显示「!」提醒要去升级，而不是假装是 0 条 */
+      msg: (S.fn < 2 ? "!" : (S.msgs ? S.msgs.length : "—")),
+      kb: kb
+    };
+    ["cand", "log", "msg", "kb"].forEach(function (k) {
+      $("n-" + k).textContent = nums[k];
+      var hot = (k === "cand" && c > 0) || (k === "msg" && (S.fn < 2 || unread > 0));
+      var b = $("tabs").querySelector('[data-tab="' + k + '"]');
+      if (b) b.className = (k === S.tab ? "on" : "") + (hot ? " hot" : "");
+    });
+    var ver = $("ver");
+    if (S.fn >= 2) { ver.textContent = "函数 ✓ 可改可删"; ver.className = "ver new"; }
+    else { ver.textContent = "函数待升级"; ver.className = "ver old"; }
+  }
+  function setTab(kind) {
+    S.tab = kind;
+    ["cand", "log", "msg", "kb"].forEach(function (k) { $("v-" + k).hidden = (k !== kind); });
+    if (kind === "cand") viewCand();
+    if (kind === "log") viewLog();
+    if (kind === "msg") viewMsg();
+    if (kind === "kb") viewKb();
+    paintBar();
+    window.scrollTo(0, 0);
+  }
+  function render() {
+    setTab(S.tab);
+  }
+
+  /* ================= 载入 ================= */
+  async function ping() {
+    try {
+      var r = await fetch(FN_URL, { method: "POST", headers: H,
+        body: JSON.stringify({ action: "admin", token: token(), op: "ping" }) });
+      if (!r.ok) return 0;
+      var j = await r.json();
+      return (j && j.ok) ? (j.version || 1) : 0;
+    } catch (e) { return 0; }
+  }
+  async function reload() {
+    var tk = token();
+    var rows = await rpc("get_chat_logs", { p_token: tk, p_limit: 400 });
+    S.rows = Array.isArray(rows) ? rows : [];
+    try { S.kb = await rpc("get_knowledge", { p_token: tk }); }
+    catch (e) { S.kb = null; }
+    S.fn = await ping();
+    if (S.fn >= 2) {
+      try { S.msgs = (await admin("feedback_list")).rows || []; }
+      catch (e) { S.msgs = null; S.fn = 0; }
+    } else { S.msgs = null; }
+    render();
+  }
+  async function boot(tk) {
+    if (!tk) return;
+    $("gst").className = "hint";
+    $("gst").textContent = "读取中……";
+    try {
+      await reload();
+      setToken(tk);
+      $("gate").hidden = true;
+      $("app").hidden = false;
+      var c = candidates().length;
+      var unread = S.msgs ? S.msgs.filter(function (m) { return !m.is_read; }).length : 0;
+      toast("读到 " + S.rows.length + " 行记录" + (c ? "，" + c + " 轮待审" : "") +
+        (unread ? "，" + unread + " 条未读留言" : "") + "。", "ok");
+    } catch (e) {
+      var m = diag(e);
+      $("gst").className = "hint err";
+      $("gst").textContent = m;
+      setToken("");
+    }
+  }
+
+  /* ================= 事件绑定 ================= */
+  $("go").addEventListener("click", function () { boot(($("tk").value || "").trim()); });
+  $("tk").addEventListener("keydown", function (e) { if (e.key === "Enter") $("go").click(); });
+  $("rf").addEventListener("click", function () {
+    toast("刷新中……");
+    reload().then(function () { toast("已刷新。", "ok"); })
+      .catch(function (e) { toast(diag(e), "err"); });
+  });
+  $("clr").addEventListener("click", function () {
+    setToken("");
+    $("tk").value = "";
+    $("app").hidden = true;
+    $("gate").hidden = false;
+    $("gst").className = "hint";
+    $("gst").textContent = "已清除本机令牌。";
+  });
+  $("tabs").addEventListener("click", function (ev) {
+    var b = ev.target.closest ? ev.target.closest("button[data-tab]") : null;
+    if (b) setTab(b.getAttribute("data-tab"));
+  });
+
+  var saved = token();
+  if (saved) boot(saved);
+  else {
+    $("gst").textContent = "令牌只存在这台设备的浏览器里，不会上传到任何地方。";
+    try { $("tk").focus(); } catch (e) {}
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>叁 · 对话 | cyc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/vn.css">
+<link rel="stylesheet" href="assets/chat.css">
+<style>
+  /* 本页专属：入夜 · 青蓝时段 */
+  .vn-bg {
+    background-image: url("assets/sky-3.webp");
+    --vn-bg-pos: 50% 45%;
+    --vn-bg-filter: saturate(.98) brightness(.86) hue-rotate(-10deg);
+  }
+</style>
+</head><body data-avatar="calm">
+<div class="vn-bg" role="img" aria-label="入夜时分的天空，橙红云霞沉入深蓝色的夜"></div>
+
+<header class="vn-top">
+  <span class="vn-chapter">叁 · 对话</span>
+  <a class="vn-back" href="index.html"
+     onclick="VNgo('index.html','序章','&quot;cyc&quot;');return false;">← 返回标题</a>
+</header>
+
+<!-- 顶部输入区：输入框 / 快捷问 / 话题芯片都在这一条里，页面大标题让位（章节名缩在右上那行小字里）。
+     放顶上是有取舍的：立绘的头在上半屏，聊天窗的高度上限只能是「下巴 + 20px」，
+     输入框、快捷问、话题芯片要是还压在窗子底下，那点高度就全被它们吃掉，对话记录只剩一条缝。 -->
+<div class="vn-compose" id="vn-compose">
+  <form class="vn-row" id="vn-form" autocomplete="off">
+    <input class="vn-input" id="vn-q" name="q" type="text" maxlength="500"
+           placeholder="随便问点什么……（Enter 发送）" aria-label="你的问题">
+    <button class="vn-send" id="vn-send" type="submit">发送</button>
+  </form>
+
+  <div class="vn-asks" id="vn-asks"></div>
+
+  <!-- 「同好」的四个方向：点一下就在窗口里聊那个方向（按钮由 clone.js 生成） -->
+  <div class="vn-topics" id="vn-topics" role="group" aria-label="选择同好话题"></div>
+
+  <p class="vn-st" id="vn-st" role="status" aria-live="polite"></p>
+</div>
+
+<!-- 底下就剩一个单纯的对话框：只有对话记录 + 章节链接 -->
+<div class="vn-dialog vn-chat">
+  <span class="vn-name">cyc · 分身</span>
+
+  <div class="vn-log" id="vn-log" role="log" aria-live="polite"
+       aria-label="与分身的对话记录"></div>
+
+  <div class="vn-jump">
+    <a href="contact.html" onclick="VNgo('contact.html','肆','联系');return false;">肆 · 联系 →</a>
+    <a href="friends.html" onclick="VNgo('friends.html','贰','同好');return false;">贰 · 同好 →</a>
+  </div>
+</div>
+
+<div class="vn-curtain">
+  <span class="ct-chapter"></span>
+  <p class="ct-title"></p>
+  <span class="ct-rule"></span>
+</div>
+
+<script src="assets/vn.js"></script>
+<script src="assets/avatar.js"></script>
+<script src="assets/feedback.js" data-source="叁 · 对话"></script>
+<script src="assets/clone.js"></script>
+</body>
+</html>

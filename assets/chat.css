@@ -1,0 +1,324 @@
+/* ============================================================
+   与 AI 分身聊天 · 共用样式
+   两个页面共用：
+     · chat.html    —— 叁「对话」（整页就是一个聊天窗）
+     · friends.html —— 贰「同好」（点某个方向后展开的话题对话窗）
+   改聊天气泡 / 输入框 / 快捷提问的外观，改这一个文件就够了。
+   ============================================================ */
+
+/* ---- 顶部输入区 ----
+   输入框 / 快捷问 / 话题芯片 / 状态行都在顶上这一条里，页面标题让位。
+   为什么放顶上：立绘的头在上半屏，聊天窗的高度上限是「下巴 + 20px」，
+   输入框和快捷问要是还留在窗子里，那点高度就全被它们吃掉，对话记录只剩一条缝。
+   位置（top）由 vn.js 按 header 的实测高度设置；立绘的头顶也从这条的下沿开始让位。 */
+.vn-compose {
+  position: fixed;
+  z-index: 4;
+  left: 50%;
+  transform: translateX(-50%);
+  top: clamp(58px, 8vh, 88px);
+  width: min(92vw, 880px);
+  padding: clamp(11px, 1.6vh, 16px) clamp(16px, 2.6vw, 26px) clamp(8px, 1.2vh, 12px);
+  /* 和对话卡片同一套玻璃语言，但更薄（它是「操作区」不是「内容区」） */
+  border: 1px solid transparent;
+  border-radius: 22px;
+  background-image:
+    linear-gradient(168deg,
+      rgba(24, 40, 84, .46) 0%,
+      rgba(14, 25, 60, .38) 42%,
+      rgba(9, 16, 40, .46) 100%),
+    linear-gradient(148deg,
+      rgba(255, 240, 214, .60) 0%,
+      rgba(246, 214, 170, .16) 26%,
+      rgba(132, 170, 220, .18) 60%,
+      rgba(246, 214, 170, .38) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  backdrop-filter: blur(6px) saturate(1.1);
+  box-shadow:
+    0 14px 38px rgba(4, 6, 18, .42),
+    inset 0 1px 0 rgba(255, 246, 228, .12);
+  animation: vn-compose-in .7s cubic-bezier(.2, .9, .3, 1) .45s both;
+}
+@keyframes vn-compose-in {
+  from { opacity: 0; transform: translate(-50%, -14px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+/* 用 hidden 控制显隐时别被 display:flex 之类的规则盖掉（贰的话题窗要用） */
+.vn-compose[hidden] { display: none !important; }
+.vn-compose > :first-child { margin-top: 0; }
+/* 空着的行不占高度：状态行没话说、快捷问还没生成时，别白白吃掉立绘头顶的空间 */
+.vn-compose .vn-st:empty,
+.vn-compose .vn-asks:empty { display: none; }
+
+/* ---- 对话框改成聊天窗（现在只装对话记录） ---- */
+.vn-dialog.vn-chat {
+  display: flex; flex-direction: column;
+  height: min(48vh, 440px);
+  /* 高度上限由 vn.js 按立绘「下巴」的实测位置算出来（--vn-chat-cap）：
+     屏幕够高时这条不起作用，屏幕一矮就自动把窗子压低，不挡脸 */
+  max-height: var(--vn-chat-cap, none);
+  padding-top: clamp(20px, 2.6vh, 26px);
+}
+
+.vn-log {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 2px 4px 2px 2px; scrollbar-width: thin;
+}
+.vn-log::-webkit-scrollbar { width: 6px; }
+.vn-log::-webkit-scrollbar-thumb { background-color: rgba(246, 214, 170, .28); border-radius: 999px; }
+
+.vn-msg {
+  max-width: 86%; padding: 9px 13px; white-space: pre-wrap; word-break: break-word;
+  font-size: clamp(13.5px, 1.5vw, 15.5px); line-height: 1.8;
+  border: 1px solid transparent; animation: vn-msg-in .26s ease-out both;
+}
+/* 气泡：大圆角 + 靠说话人一侧收一个小角（像「嘴」），配渐变底色与柔光 */
+.vn-msg.clone {
+  align-self: flex-start; color: rgba(245, 238, 228, .95);
+  border-radius: 17px 17px 17px 5px;
+  background-image: linear-gradient(162deg,
+    rgba(24, 38, 82, .60) 0%, rgba(11, 19, 46, .56) 100%);
+  border-color: rgba(246, 214, 170, .26);
+  box-shadow: 0 6px 18px rgba(4, 6, 18, .34), inset 0 1px 0 rgba(255, 246, 228, .09);
+}
+.vn-msg.me {
+  align-self: flex-end; color: #2a1c10;
+  border-radius: 17px 17px 5px 17px;
+  background-image: linear-gradient(168deg,
+    #fdf3dd 0%, #f6dcae 48%, #e9c88f 100%);
+  border-color: rgba(255, 240, 214, .85);
+  box-shadow: 0 7px 20px rgba(4, 6, 18, .34), 0 0 16px rgba(246, 214, 170, .20),
+              inset 0 1px 0 rgba(255, 255, 255, .65);
+}
+.vn-msg.sys {
+  align-self: center; max-width: 100%; padding: 4px 8px; font-size: 12px;
+  letter-spacing: .06em; color: rgba(246, 214, 170, .62); background: transparent;
+}
+@keyframes vn-msg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.vn-msg .cur { display: inline-block; width: .5em; color: rgba(246, 214, 170, .9); animation: vn-blink 1s step-end infinite; }
+@keyframes vn-blink { 50% { opacity: 0; } }
+
+/* ---- 快捷提问 ---- */
+.vn-asks { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+.vn-ask {
+  padding: 6px 14px; cursor: pointer; font: inherit; font-size: 12px; letter-spacing: .06em;
+  color: rgba(246, 214, 170, .85);
+  border: 1px solid transparent; border-radius: 999px;
+  background-image:
+    linear-gradient(180deg, rgba(14, 25, 58, .38) 0%, rgba(7, 13, 34, .44) 100%),
+    linear-gradient(124deg,
+      rgba(246, 214, 170, .46) 0%, rgba(246, 214, 170, .12) 40%,
+      rgba(150, 186, 228, .26) 70%, rgba(246, 214, 170, .38) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  transition: color .24s ease, transform .24s ease, box-shadow .24s ease, background-image .24s ease;
+}
+.vn-ask:hover {
+  color: #fff3dd; transform: translateY(-1px);
+  background-image:
+    linear-gradient(180deg, rgba(34, 50, 98, .46) 0%, rgba(16, 26, 62, .52) 100%),
+    linear-gradient(124deg,
+      rgba(255, 242, 216, .92) 0%, rgba(246, 214, 170, .34) 40%,
+      rgba(172, 204, 240, .42) 70%, rgba(255, 242, 216, .82) 100%);
+  box-shadow: 0 8px 20px rgba(4, 6, 18, .4), 0 0 16px rgba(246, 214, 170, .22);
+}
+.vn-ask[disabled] { opacity: .42; cursor: default; }
+
+/* ---- 输入行 ---- */
+.vn-row { display: flex; gap: 9px; margin-top: 11px; }
+.vn-input {
+  flex: 1; min-width: 0; padding: 10px 17px; font: inherit; font-size: 14px;
+  color: #f5eee4;
+  border: 1px solid transparent; border-radius: 999px;
+  background-image:
+    linear-gradient(180deg, rgba(9, 17, 42, .58) 0%, rgba(6, 11, 30, .62) 100%),
+    linear-gradient(124deg,
+      rgba(246, 214, 170, .34) 0%, rgba(246, 214, 170, .10) 40%,
+      rgba(150, 186, 228, .22) 70%, rgba(246, 214, 170, .30) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  outline: none;
+  transition: box-shadow .26s ease, background-image .26s ease;
+}
+.vn-input:focus {
+  background-image:
+    linear-gradient(180deg, rgba(13, 24, 56, .58) 0%, rgba(8, 15, 38, .62) 100%),
+    linear-gradient(124deg,
+      rgba(255, 242, 216, .92) 0%, rgba(246, 214, 170, .30) 40%,
+      rgba(172, 204, 240, .44) 70%, rgba(255, 242, 216, .84) 100%);
+  box-shadow: 0 0 0 3px rgba(246, 214, 170, .14), 0 8px 22px rgba(4, 6, 18, .38);
+}
+.vn-input::placeholder { color: rgba(246, 214, 170, .42); }
+.vn-send {
+  flex: none; padding: 10px 22px; cursor: pointer;
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: 13.5px; letter-spacing: .18em; text-indent: .18em;
+  color: #2a1c10; border: 1px solid transparent; border-radius: 999px;
+  background-image: linear-gradient(174deg,
+    #fdf3dd 0%, #f8e0b4 38%, #eac68c 70%, #f6dfb6 100%);
+  box-shadow: 0 6px 18px rgba(4, 6, 18, .4), 0 0 18px rgba(246, 214, 170, .26),
+              inset 0 1px 0 rgba(255, 255, 255, .7);
+  transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+}
+.vn-send:hover {
+  filter: brightness(1.05); transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(4, 6, 18, .44), 0 0 24px rgba(246, 214, 170, .42),
+              inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+.vn-send[disabled] { opacity: .55; cursor: progress; }
+
+.vn-st { margin: 8px 0 0; min-height: 1.1em; font-size: 12px; letter-spacing: .07em; color: rgba(246, 214, 170, .6); }
+.vn-st[data-kind="err"] { color: #ffb39c; }
+.vn-st[data-kind="busy"] { color: rgba(246, 214, 170, .5); }
+
+.vn-jump { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 9px; font-size: 12px; letter-spacing: .1em; }
+.vn-jump a { position: relative; color: rgba(246, 214, 170, .6); text-decoration: none; transition: color .24s; }
+.vn-jump a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px;
+  background-image: linear-gradient(90deg,
+    rgba(246, 214, 170, 0), rgba(246, 214, 170, .9), rgba(246, 214, 170, 0));
+  transform: scaleX(0); transform-origin: 50% 50%; transition: transform .3s ease;
+}
+.vn-jump a:hover { color: #fff3dd; }
+.vn-jump a:hover::after { transform: scaleX(1); }
+
+@media (max-width: 520px) {
+  .vn-dialog.vn-chat { height: min(70vh, 560px); }
+  .vn-msg { max-width: 94%; }
+  /* 窄屏：两排芯片（话题 + 快捷问）改成一行横滑。它们一换行就是两行几十像素，
+     而聊天窗的上限是「下巴 + 20px」，那点高度全是从对话记录里扣的 ——
+     手机上记录区就只剩一条缝了。芯片横滑，高度还给记录。 */
+  .vn-topics, .vn-asks {
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    overscroll-behavior-x: contain; scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .vn-topics > *, .vn-asks > * { flex: none; }
+}
+
+/* 用 hidden 属性控制显隐：聊天窗外层设了 display:flex，会盖掉浏览器默认的
+   [hidden]{display:none}，所以这里显式补一条，别删 */
+.vn-dialog[hidden] { display: none !important; }
+
+/* ============================================================
+   话题（「同好」的四个方向：游戏 / 运动 / 日常 / 学习）
+   贰点方向 → 展开那个方向的对话窗；叁顶部也能直接选话题。
+   ============================================================ */
+
+/* 贰的话题对话窗：比叁矮一点，好让立绘的头肩还露在窗口上面；
+   顺便把入场动画调快（默认是「延迟 .7s + 走 .7s」，点一下等太久） */
+.vn-dialog.vn-chat-topic {
+  height: min(52vh, 440px);
+  animation-duration: .45s;
+  animation-delay: .02s;
+}
+
+/* 话题条：左边「正在聊哪个方向」，右边「← 换个方向」 */
+.vn-topicbar {
+  flex: none; display: flex; align-items: center; gap: 10px;
+  margin: 0 0 10px;
+}
+.vn-topicnow {
+  padding: 3px 15px 4px;
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: clamp(11.5px, 1.15vw, 13px);
+  letter-spacing: .16em; text-indent: .16em;
+  color: #2a1c10; border-radius: 999px;
+  background-image: linear-gradient(174deg,
+    #fdf3dd 0%, #f8e0b4 36%, #eac68c 68%, #f6dfb6 100%);
+  box-shadow:
+    0 5px 15px rgba(4, 6, 18, .44),
+    0 0 0 1px rgba(255, 248, 232, .45),
+    0 0 16px rgba(246, 214, 170, .24),
+    inset 0 1px 0 rgba(255, 255, 255, .72);
+}
+.vn-topicback {
+  margin-left: auto; padding: 5px 14px; cursor: pointer; font: inherit;
+  font-size: 11.5px; letter-spacing: .1em;
+  color: rgba(246, 214, 170, .72);
+  border: 1px solid transparent; border-radius: 999px;
+  background-image:
+    linear-gradient(180deg, rgba(14, 25, 58, .30) 0%, rgba(7, 13, 34, .36) 100%),
+    linear-gradient(124deg,
+      rgba(246, 214, 170, .34) 0%, rgba(246, 214, 170, .10) 42%,
+      rgba(150, 186, 228, .20) 70%, rgba(246, 214, 170, .28) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  transition: color .24s ease, transform .24s ease, box-shadow .24s ease, background-image .24s ease;
+}
+.vn-topicback:hover {
+  color: #fff3dd; transform: translateY(-1px);
+  background-image:
+    linear-gradient(180deg, rgba(34, 50, 98, .42) 0%, rgba(16, 26, 62, .48) 100%),
+    linear-gradient(124deg,
+      rgba(255, 242, 216, .86) 0%, rgba(246, 214, 170, .30) 42%,
+      rgba(172, 204, 240, .38) 70%, rgba(255, 242, 216, .76) 100%);
+  box-shadow: 0 8px 18px rgba(4, 6, 18, .38), 0 0 14px rgba(246, 214, 170, .20);
+}
+
+/* 叁顶部的「话题入口」一行 */
+.vn-topics {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  margin: 0 0 10px;
+}
+.vn-topics-k {
+  font-size: 11.5px; letter-spacing: .16em; text-indent: .16em;
+  color: rgba(246, 214, 170, .5);
+}
+/* 话题按钮沿用 .vn-ask 的胶囊外观，只补一个「选中」态 */
+.vn-topic { padding: 5px 13px; font-size: 11.5px; }
+.vn-topic.on {
+  color: #2a1c10; transform: none;
+  background-image: linear-gradient(174deg,
+    #fdf3dd 0%, #f8e0b4 38%, #eac68c 70%, #f6dfb6 100%);
+  background-origin: border-box;
+  background-clip: border-box;
+  box-shadow:
+    0 6px 16px rgba(4, 6, 18, .38),
+    0 0 14px rgba(246, 214, 170, .30),
+    inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+.vn-topic.on:hover { color: #2a1c10; transform: none; }
+
+@media (max-width: 520px) {
+  .vn-dialog.vn-chat-topic { height: min(62vh, 460px); }
+  .vn-topicbar { margin-bottom: 8px; }
+  .vn-topics { gap: 6px; margin-bottom: 8px; }
+  .vn-topic { padding: 5px 11px; }
+}
+
+/* ============================================================
+   聊天窗高度可拖（抓手在顶缘正中，双击复位）
+   默认高度仍然是自适应 + 不挡脸，这个抓手只是留给访客自己微调用。
+   ============================================================ */
+.vn-grip {
+  position: absolute;
+  top: -9px; left: 50%;
+  width: 46px; height: 5px;
+  margin-left: -23px;
+  border-radius: 999px;
+  cursor: ns-resize;
+  touch-action: none;
+  background-image: linear-gradient(90deg,
+    rgba(255, 240, 214, 0), rgba(255, 244, 222, .95) 50%, rgba(255, 240, 214, 0));
+  box-shadow: 0 0 12px rgba(246, 214, 170, .45);
+  opacity: 0;
+  transition: opacity .24s ease, box-shadow .24s ease;
+}
+/* 平时藏着，鼠标移到窗子上或键盘焦点在窗内才浮出来；拖动时最亮 */
+.vn-dialog.vn-chat:hover .vn-grip,
+.vn-dialog.vn-chat:focus-within .vn-grip { opacity: .5; }
+.vn-grip:hover { opacity: 1; }
+.vn-dialog.vn-chat-drag .vn-grip {
+  opacity: 1;
+  box-shadow: 0 0 16px rgba(255, 240, 214, .8);
+}
+/* 拖动时别让文字被选中 */
+.vn-dialog.vn-chat-drag { user-select: none; }
+
+@media (max-width: 520px) {
+  .vn-grip { width: 52px; height: 6px; margin-left: -26px; top: -10px; opacity: .34; }
+}

@@ -1,0 +1,511 @@
+/* ============================================================
+   VN 共享样式 — 文字冒险游戏风格
+   子页面 about / friends / chat / contact 共用
+   承接首页「晚霞 + 明朝体 + 金线」视觉语言
+   ============================================================ */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: #0b1022;
+  color: #f2e8dc;
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 背景层：每页用 --vn-bg / --vn-bg-filter 区分 ---------- */
+.vn-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: #0b1022;
+  background-image: var(--vn-bg, none);
+  background-repeat: no-repeat;
+  background-position: var(--vn-bg-pos, 50% 55%);
+  background-size: cover;
+  filter: var(--vn-bg-filter, none);
+  animation: vn-bg-in 2s ease-out both;
+}
+@keyframes vn-bg-in {
+  from { transform: scale(1.07); }
+  to   { transform: scale(1); }
+}
+.vn-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg,
+    rgba(8, 12, 28, .58) 0%,
+    rgba(8, 12, 28, .16) 36%,
+    rgba(8, 12, 28, .60) 70%,
+    rgba(8, 12, 28, .90) 100%);
+}
+
+/* ---------- 顶部：章节标记 + 返回标题 ---------- */
+.vn-top {
+  position: fixed;
+  z-index: 3;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(14px, 2.4vh, 24px) clamp(16px, 3vw, 36px);
+  animation: vn-fade-down .9s ease-out .5s both;
+}
+@keyframes vn-fade-down {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: none; }
+}
+.vn-chapter {
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: clamp(12px, 1.2vw, 14px);
+  letter-spacing: .34em;
+  color: rgba(246, 214, 170, .82);
+  text-shadow: 0 2px 10px rgba(4, 6, 18, .85);
+}
+.vn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  padding: 7px 16px;
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: 13px;
+  letter-spacing: .2em;
+  text-indent: .2em;
+  text-decoration: none;
+  color: #f7ead6;
+  /* 玻璃小胶囊：圆角 + 渐变描边 + 极轻模糊。
+     和对话框同一套语言（暖金→冷青描边），但更薄、更小、光更弱，
+     所以能一眼分清「这是按钮」而不是「这是一个小对话框」 */
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-image:
+    linear-gradient(180deg, rgba(12, 22, 52, .42) 0%, rgba(7, 13, 34, .50) 100%),
+    linear-gradient(124deg,
+      rgba(246, 214, 170, .58) 0%,
+      rgba(246, 214, 170, .16) 36%,
+      rgba(150, 186, 228, .30) 68%,
+      rgba(246, 214, 170, .46) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  -webkit-backdrop-filter: blur(4px) saturate(1.08);
+  backdrop-filter: blur(4px) saturate(1.08);
+  box-shadow:
+    0 6px 18px rgba(4, 6, 18, .40),
+    inset 0 1px 0 rgba(255, 246, 228, .12);
+  text-shadow: 0 2px 10px rgba(4, 6, 18, .85);
+  transition: color .26s ease, transform .26s ease,
+              box-shadow .26s ease, background-image .26s ease;
+}
+.vn-back:hover {
+  color: #fffaef;
+  transform: translateY(-1px);
+  background-image:
+    linear-gradient(180deg, rgba(30, 46, 92, .48) 0%, rgba(13, 22, 54, .54) 100%),
+    linear-gradient(124deg,
+      rgba(255, 242, 216, .95) 0%,
+      rgba(246, 214, 170, .38) 36%,
+      rgba(172, 204, 240, .48) 68%,
+      rgba(255, 242, 216, .86) 100%);
+  box-shadow:
+    0 10px 24px rgba(4, 6, 18, .46),
+    0 0 18px rgba(246, 214, 170, .26),
+    inset 0 1px 0 rgba(255, 246, 228, .2);
+  text-shadow: 0 0 14px rgba(246, 214, 170, .55), 0 2px 10px rgba(4, 6, 18, .9);
+}
+.vn-back:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(246, 214, 170, .22),
+    0 10px 24px rgba(4, 6, 18, .46),
+    inset 0 1px 0 rgba(255, 246, 228, .2);
+  text-shadow: 0 0 14px rgba(255, 216, 166, .9);
+}
+
+/* ---------- 中央标题（场景名） ---------- */
+/* 立绘居中后会把头落在画面中上部，所以标题整体上提，
+   让「标题 → 人物 → 对话框」由远及近排开，不互相压住 */
+.vn-scene {
+  position: fixed;
+  z-index: 2;
+  top: clamp(9vh, 10.5vh, 15vh);
+  left: 0; right: 0;
+  text-align: center;
+  pointer-events: none;
+  animation: vn-title-in 1.1s cubic-bezier(.2, .8, .3, 1) .35s both;
+}
+@keyframes vn-title-in {
+  from { opacity: 0; transform: translateY(18px); filter: blur(6px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+.vn-title {
+  margin: 0;
+  font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP",
+               "MS PMincho", "SimSun", "Songti SC", serif;
+  font-weight: 700;
+  font-size: clamp(30px, 5.2vw, 58px);
+  letter-spacing: .16em;
+  text-indent: .16em;
+  background-image: linear-gradient(180deg, #ffffff 0%, #fffbf4 34%, #fdf1e6 66%, #f9e7e0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 16px rgba(8, 8, 24, .8));
+}
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .vn-title { color: #f7d9ae; background-image: none; }
+}
+.vn-rule {
+  display: block;
+  width: 172px;
+  height: 1px;
+  margin: clamp(14px, 2.4vh, 22px) auto 0;
+  background-image: linear-gradient(90deg,
+    rgba(246, 214, 170, 0), rgba(246, 214, 170, .85) 50%, rgba(246, 214, 170, 0));
+  transform-origin: 50% 50%;
+  animation: vn-rule-in 1s ease-out .8s both;
+}
+@keyframes vn-rule-in {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* ---------- 底部对话框 ---------- */
+.vn-dialog {
+  position: fixed;
+  z-index: 3;
+  left: 50%;
+  bottom: clamp(20px, 4vh, 40px);
+  transform: translateX(-50%);
+  width: min(92vw, 880px);
+  padding: clamp(18px, 2.6vh, 26px) clamp(20px, 3vw, 34px) clamp(20px, 3vh, 28px);
+  /* 玻璃卡片：圆角 + 渐变描边（左上暖金 → 右下冷青）+ 多层内光
+     —— 替掉原来的 1px 方框与单色底，边框不再是「一条硬线」 */
+  border: 1px solid transparent;
+  border-radius: 24px;
+  background-image:
+    linear-gradient(168deg,
+      rgba(24, 40, 84, .58) 0%,
+      rgba(14, 25, 60, .50) 38%,
+      rgba(9, 16, 40, .54) 72%,
+      rgba(17, 26, 58, .58) 100%),
+    linear-gradient(148deg,
+      rgba(255, 240, 214, .72) 0%,
+      rgba(246, 214, 170, .20) 24%,
+      rgba(132, 170, 220, .20) 58%,
+      rgba(246, 214, 170, .46) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  -webkit-backdrop-filter: blur(5px) saturate(1.1);
+  backdrop-filter: blur(5px) saturate(1.1);
+  box-shadow:
+    0 20px 56px rgba(4, 6, 18, .56),
+    0 2px 10px rgba(4, 6, 18, .34),
+    inset 0 1px 0 rgba(255, 246, 228, .13),
+    inset 0 -16px 34px -20px rgba(246, 214, 170, .26);
+  animation: vn-dialog-in .7s cubic-bezier(.2, .9, .3, 1) .7s both;
+}
+/* 顶缘流光：一条细金线缓慢呼吸，让上边缘有「流动」感 */
+.vn-dialog::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  width: 84%;
+  height: 1px;
+  border-radius: 999px;
+  pointer-events: none;
+  background-image: linear-gradient(90deg,
+    rgba(246, 214, 170, 0) 0%,
+    rgba(255, 240, 214, .95) 40%,
+    rgba(186, 220, 255, .78) 62%,
+    rgba(246, 214, 170, 0) 100%);
+  box-shadow: 0 0 16px rgba(246, 214, 170, .42);
+  transform: translateX(-50%) scaleX(.7);
+  animation: vn-topline 7.5s ease-in-out 1.5s infinite;
+}
+@keyframes vn-topline {
+  0%, 100% { transform: translateX(-50%) scaleX(.7); opacity: .5; }
+  50%      { transform: translateX(-50%) scaleX(1);  opacity: 1; }
+}
+@keyframes vn-dialog-in {
+  from { opacity: 0; transform: translate(-50%, 26px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.vn-name {
+  position: absolute;
+  top: -13px;
+  left: clamp(20px, 3vw, 34px);
+  padding: 4px 18px 5px;
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: clamp(12px, 1.2vw, 14px);
+  letter-spacing: .18em;
+  text-indent: .18em;
+  color: #2a1c10;
+  /* 名牌：胶囊形 + 暖金渐变 + 柔光，替掉原来的直角金块 */
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-image: linear-gradient(174deg,
+    #fdf3dd 0%, #f8e0b4 36%, #eac68c 68%, #f6dfb6 100%);
+  background-origin: border-box;
+  background-clip: border-box;
+  box-shadow:
+    0 7px 20px rgba(4, 6, 18, .48),
+    0 0 0 1px rgba(255, 248, 232, .5),
+    0 0 22px rgba(246, 214, 170, .30),
+    inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+.vn-text {
+  margin: 0;
+  min-height: 5.4em;
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 2;
+  color: rgba(245, 238, 228, .94);
+  text-shadow: 0 1px 8px rgba(4, 6, 18, .8);
+}
+.vn-text .caret {
+  display: inline-block;
+  width: .5em;
+  margin-left: .1em;
+  color: rgba(246, 214, 170, .9);
+  animation: vn-blink .9s steps(1) infinite;
+}
+@keyframes vn-blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+.vn-next {
+  position: absolute;
+  right: clamp(18px, 3vw, 30px);
+  bottom: clamp(10px, 1.6vh, 16px);
+  font-size: 12px;
+  letter-spacing: .24em;
+  color: rgba(246, 214, 170, .8);
+  opacity: 0;
+}
+.vn-next.on { animation: vn-next 1.4s ease-in-out infinite; }
+@keyframes vn-next {
+  0%, 100% { opacity: .25; transform: translateY(0); }
+  50%      { opacity: .95; transform: translateY(-3px); }
+}
+
+/* ---------- 选项（对话分支 / 跳转） ---------- */
+.vn-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.vn-choice {
+  padding: 9px 22px;
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: clamp(13px, 1.4vw, 15px);
+  letter-spacing: .14em;
+  text-indent: .14em;
+  text-decoration: none;
+  color: #f7ead6;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-image:
+    linear-gradient(180deg, rgba(16, 28, 64, .44) 0%, rgba(8, 15, 38, .50) 100%),
+    linear-gradient(124deg,
+      rgba(246, 214, 170, .62) 0%,
+      rgba(246, 214, 170, .18) 34%,
+      rgba(150, 186, 228, .32) 68%,
+      rgba(246, 214, 170, .52) 100%);
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: 0 4px 14px rgba(4, 6, 18, .32), inset 0 1px 0 rgba(255, 246, 228, .10);
+  transition: transform .26s cubic-bezier(.2, .9, .3, 1), box-shadow .26s ease,
+              color .26s ease, background-image .26s ease;
+}
+.vn-choice:hover {
+  color: #fff6e6;
+  transform: translateY(-2px);
+  background-image:
+    linear-gradient(180deg, rgba(42, 60, 112, .52) 0%, rgba(22, 34, 76, .58) 100%),
+    linear-gradient(124deg,
+      rgba(255, 242, 216, .95) 0%,
+      rgba(246, 214, 170, .40) 34%,
+      rgba(176, 208, 244, .48) 68%,
+      rgba(255, 242, 216, .88) 100%);
+  box-shadow:
+    0 12px 28px rgba(4, 6, 18, .44),
+    0 0 20px rgba(246, 214, 170, .26),
+    inset 0 1px 0 rgba(255, 246, 228, .18);
+}
+
+/* ---------- 转场遮罩（幕布） ---------- */
+.vn-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background-color: #05070f;
+  opacity: 0;
+  pointer-events: none;
+}
+/* 退场：从透明到全黑 */
+.vn-curtain.closing {
+  pointer-events: auto;
+  animation: vn-close .62s cubic-bezier(.5, 0, .9, .4) both;
+}
+@keyframes vn-close { from { opacity: 0; } to { opacity: 1; } }
+/* 入场：从全黑到透明 */
+.vn-curtain.opening {
+  opacity: 1;
+  pointer-events: auto;
+  animation: vn-open .78s ease-out .28s both;
+}
+@keyframes vn-open { from { opacity: 1; } to { opacity: 0; } }
+
+.vn-curtain .ct-chapter {
+  font-family: "Yu Mincho", "YuMincho", "MS PMincho", "SimSun", serif;
+  font-size: clamp(13px, 1.5vw, 16px);
+  letter-spacing: .42em;
+  text-indent: .42em;
+  color: rgba(246, 214, 170, .9);
+  opacity: 0;
+}
+.vn-curtain .ct-title {
+  margin: 14px 0 0;
+  font-family: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP",
+               "MS PMincho", "SimSun", serif;
+  font-weight: 700;
+  font-size: clamp(26px, 4.4vw, 46px);
+  letter-spacing: .18em;
+  text-indent: .18em;
+  color: #fdf6ec;
+  opacity: 0;
+}
+.vn-curtain .ct-rule {
+  width: 0;
+  height: 1px;
+  margin-top: 18px;
+  background-image: linear-gradient(90deg,
+    rgba(246, 214, 170, 0), rgba(246, 214, 170, .9) 50%, rgba(246, 214, 170, 0));
+}
+.vn-curtain.closing .ct-chapter { animation: vn-ct 2.2s ease-out .12s both; }
+.vn-curtain.closing .ct-title   { animation: vn-ct 2.2s ease-out .26s both; }
+.vn-curtain.closing .ct-rule    { animation: vn-ct-rule 1.6s ease-out .3s both; }
+@keyframes vn-ct {
+  from { opacity: 0; transform: translateY(12px); filter: blur(5px); }
+  45%  { opacity: 1; transform: none; filter: blur(0); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes vn-ct-rule { from { width: 0; } to { width: 172px; } }
+
+/* ---------- 减少动态效果 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .vn-bg, .vn-top, .vn-scene, .vn-rule, .vn-dialog, .vn-dialog::before, .vn-curtain.closing,
+  .vn-curtain.closing .ct-chapter, .vn-curtain.closing .ct-title,
+  .vn-curtain.closing .ct-rule { animation: none !important; opacity: 1 !important; }
+  .vn-next.on { animation: none; opacity: .8; }
+  .vn-text .caret { animation: none; }
+}
+/* ---------- 对话结束后才展开的内容（选项 / 面板） ---------- */
+.vn-reveal {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity .55s ease, transform .55s ease, visibility .55s;
+}
+.vn-reveal.on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+/* ---------- 窄屏 / 竖屏适配 ---------- */
+@media (max-width: 640px) {
+  .vn-scene { top: 11vh; }
+  .vn-title { font-size: clamp(24px, 7.6vw, 32px); }
+  .vn-dialog { width: 94vw; bottom: 14px; padding: 16px 18px 18px; border-radius: 19px; }
+  .vn-text { min-height: 7.4em; font-size: 13.5px; line-height: 1.85; }
+  .vn-name { left: 18px; }
+  .vn-choices { gap: 8px; margin-top: 12px; }
+  .vn-choice { padding: 8px 15px; font-size: 12.5px; letter-spacing: .1em; text-indent: .1em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vn-reveal { transition: none; }
+}
+/* ---------- 立绘（画面正中，随情绪切表情） ---------- */
+.vn-avatar {
+  position: fixed;
+  z-index: 1;
+  /* 居中：left 50% + translateX(-50%)；人物沉到对话框后面，
+     对话框之上正好露出头 + 肩胸，是 VN 的经典构图 */
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -5vh;
+  height: min(82vh, 920px);
+  width: auto;
+  aspect-ratio: 780 / 1112;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .5s ease .15s;
+  filter: drop-shadow(0 18px 34px rgba(3, 6, 16, .55));
+}
+.vn-avatar.on { opacity: 1; }
+.vn-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 100%;
+  opacity: 0;
+  transition: opacity .42s ease;
+}
+.vn-avatar img.on { opacity: 1; }
+
+/* 换景快闪：全黑一瞬（不显示文字） */
+.vn-curtain.flash {
+  pointer-events: auto;
+  animation: vn-flash .6s cubic-bezier(.4, 0, .32, 1) both;
+}
+@keyframes vn-flash {
+  0%   { opacity: 0; }
+  35%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (max-width: 640px) {
+  /* 窄屏同样居中（不再左偏）；底部少探出一点。
+     立绘要够大：头只占画面顶上约 1/4（下巴在画布 338/1112 处），
+     立绘越大 → 下巴越高 → 聊天窗越有地方站（vn.js 会按实际视口再收一次，
+     保证头顶不钻到章节标题下面）。 */
+  .vn-avatar { height: min(94vh, 700px); bottom: -2vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vn-avatar, .vn-avatar img { transition: none; }
+  .vn-curtain.flash { animation: none !important; opacity: 0 !important; }
+}
+
+/* 短视口：立绘反而要放大 —— 人往上长，下巴线跟着上移，窗子才有地方站 */
+@media (max-height: 660px) {
+  .vn-avatar { height: min(96vh, 620px); }
+}
+
+/* ---------- 极矮屏兜底：正文窗「不挡脸」----------
+   正文窗是内容自适应高度，窗口特别小的时候它会长到压住脸。
+   由 vn.js 按立绘「下巴」的位置算出上限，只在**自然高度真的超过上限**时
+   才加上 .vn-fit 和 max-height —— 正常尺寸下这段样式永远不生效。
+   收起来之后由正文块自己滚动，名字牌（top:-13px 绝对定位）因此不会被裁掉。 */
+.vn-dialog.vn-fit {
+  display: flex;
+  flex-direction: column;
+}
+.vn-dialog.vn-fit .vn-text {
+  flex: 1 1 auto;
+  min-height: 4.6em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* 已经挤到极限，顺便把按钮收紧一点，正文才留得下 */
+.vn-dialog.vn-fit .vn-choices { gap: 6px; margin-top: 10px; }
+.vn-dialog.vn-fit .vn-choice { padding: 6px 12px; font-size: 12.5px; }
+.vn-dialog.vn-fit .vn-scene-btn { padding: 5px 10px; font-size: 11.5px; }
