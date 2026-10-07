@@ -143,6 +143,11 @@
   .gate .sub{ margin:0 0 18px; font-size:12px; letter-spacing:.14em; color:rgba(246,214,170,.6); }
   .gate .rule{ display:block; width:66px; height:1px; margin:12px 0 18px;
     background-image:linear-gradient(90deg,var(--gold),transparent); }
+  .gate .field > span{ display:flex; align-items:baseline; }
+  .eye{ margin-left:auto; cursor:pointer; font-size:12px; letter-spacing:.12em;
+    color:rgba(246,214,170,.85); border-bottom:1px dashed rgba(246,214,170,.45);
+    -webkit-user-select:none; user-select:none; }
+  .eye:active,.eye:focus-visible{ color:#ffe6bd; border-bottom-color:rgba(246,214,170,.9); outline:none; }
 
   /* 提示条 */
   .toast{ position:fixed; left:50%; transform:translateX(-50%);
@@ -167,11 +172,12 @@
   <p class="sub">对话记录 · 留言 · 分身知识库</p>
   <span class="rule"></span>
   <div class="field">
-    <span>查看令牌</span>
+    <span>令牌<b class="eye" id="eye" role="button" tabindex="0" aria-pressed="false">显示</b></span>
     <input id="tk" type="password" placeholder="输入令牌" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
   </div>
   <div class="acts">
     <button class="btn primary" id="go" type="button">进入</button>
+    <button class="btn sm" id="clrG" type="button" hidden>换令牌</button>
   </div>
   <p class="hint" id="gst">令牌只存在这台设备的浏览器里，不会上传到任何地方。</p>
 </div>
@@ -310,7 +316,7 @@
 
   function diag(e) {
     var m = String((e && e.message) || e);
-    if (/BAD_TOKEN/i.test(m)) return "令牌不对 —— 点「换令牌」重新输入。";
+    if (/BAD_TOKEN/i.test(m)) return "令牌不对 —— 点下面的「换令牌」，清空后重新输入（可先点「显示」核对一下）。";
     if (e && e.fnOld) return FN_HINT;
     if (/PGRST202|Could not find the function|schema cache|does not exist/i.test(m)) return SQL_HINT;
     return "出错了：" + m;
@@ -832,7 +838,12 @@
     render();
   }
   async function boot(tk) {
-    if (!tk) return;
+    if (!tk) {
+      $("gst").className = "hint err";
+      $("gst").textContent = "请先输入令牌。";
+      try { $("tk").focus(); } catch (e0) {}
+      return;
+    }
     $("gst").className = "hint";
     $("gst").textContent = "读取中……";
     try {
@@ -849,6 +860,8 @@
       $("gst").className = "hint err";
       $("gst").textContent = m;
       setToken("");
+      $("clrG").hidden = false;   /* 门禁页也给出「换令牌」，不必先登进去 */
+      try { $("tk").focus(); } catch (e1) {}
     }
   }
 
@@ -860,13 +873,35 @@
     reload().then(function () { toast("已刷新。", "ok"); })
       .catch(function (e) { toast(diag(e), "err"); });
   });
-  $("clr").addEventListener("click", function () {
+  /* 清掉本机令牌 → 回门禁页重输（顶栏与门禁页两个入口共用） */
+  function clearTok() {
     setToken("");
     $("tk").value = "";
+    $("tk").type = "password";
+    $("eye").classList.remove("on");
+    $("eye").setAttribute("aria-pressed", "false");
+    $("eye").textContent = "显示";
     $("app").hidden = true;
     $("gate").hidden = false;
+    $("clrG").hidden = true;
     $("gst").className = "hint";
-    $("gst").textContent = "已清除本机令牌。";
+    $("gst").textContent = "已清除本机令牌，请输入新令牌。";
+    try { $("tk").focus(); } catch (e) {}
+  }
+  $("clr").addEventListener("click", clearTok);
+  $("clrG").addEventListener("click", clearTok);
+
+  /* 显示 / 隐藏令牌明文（手机上输错时用来核对） */
+  function toggleEye() {
+    var show = $("tk").type === "password";
+    $("tk").type = show ? "text" : "password";
+    $("eye").classList.toggle("on", show);
+    $("eye").setAttribute("aria-pressed", show ? "true" : "false");
+    $("eye").textContent = show ? "隐藏" : "显示";
+  }
+  $("eye").addEventListener("click", toggleEye);
+  $("eye").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleEye(); }
   });
   $("tabs").addEventListener("click", function (ev) {
     var b = ev.target.closest ? ev.target.closest("button[data-tab]") : null;
