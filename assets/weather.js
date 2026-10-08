@@ -23,10 +23,21 @@
 (function () {
   "use strict";
 
-  var SB_URL = "https://zhklmnxtdzhkouwfyghr.supabase.co";
-  var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20";
-  var EP = SB_URL + "/functions/v1/vn_clone";
-  var HDR = { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY };
+  /* 后端入口统一在 assets/backend.js（直连 / 中转 / 故障转移都在那儿）。
+     下面留一份兜底，万一某页忘了引 backend.js，直连仍然照旧可用。 */
+  var VNB = window.VNB || {
+    KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20",
+    headers: function (json) {
+      var h = { apikey: this.KEY, Authorization: "Bearer " + this.KEY };
+      if (json) h["Content-Type"] = "application/json";
+      return h;
+    },
+    fetch: function (path, opts) {
+      return fetch("https://zhklmnxtdzhkouwfyghr.supabase.co" + path, opts);
+    }
+  };
+  var EP = "/functions/v1/vn_clone";
+  var HDR = VNB.headers(false);
 
   var KEY = "vn_wx";          /* sessionStorage：同一标签页不重复打接口 */
   var TTL = 10 * 60 * 1000;   /* 与服务端缓存对齐（10 分钟） */
@@ -118,7 +129,7 @@
   function fromFunction() {
     var ctl = window.AbortController ? new window.AbortController() : null;
     var timer = ctl ? setTimeout(function () { ctl.abort(); }, FN_WAIT) : null;
-    return fetch(EP + "?wx=1", { headers: HDR, signal: ctl ? ctl.signal : undefined })
+    return VNB.fetch(EP + "?wx=1", { headers: HDR, signal: ctl ? ctl.signal : undefined })
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })          /* 超时 / 断网 / 404 都当没通 */
       .then(function (j) { if (timer) clearTimeout(timer); return j; });

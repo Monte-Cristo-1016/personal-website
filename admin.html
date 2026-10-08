@@ -217,6 +217,7 @@
 
 <div class="toast" id="toast" hidden></div>
 
+<script src="assets/backend.js"></script>
 <script>
 (function () {
   "use strict";
@@ -225,6 +226,11 @@
   var SB_URL = "https://zhklmnxtdzhkouwfyghr.supabase.co";
   var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20";
   var FN_URL = SB_URL + "/functions/v1/vn_clone";
+  /* 走 assets/backend.js 的入口选择 + 故障转移（中转/直连自动挑一个通的）；
+     万一这页没引到 backend.js，就退回原来的直连写法。 */
+  var API = (window.VNB && window.VNB.fetch) ? window.VNB.fetch : function (path, opts) {
+    return fetch(SB_URL + path, opts);
+  };
   var TKEY = "vn_logs_token";              /* 与旧的 logs.html 共用一个令牌，换过去不用重新输入 */
   var H = { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json" };
   var KB_TABLE = { faq: "clone_faq", persona: "clone_persona" };
@@ -316,7 +322,7 @@
   /* ================= 数据通道 ================= */
   /* 读：走数据库 RPC（令牌校验在数据库里） */
   async function rpc(name, body) {
-    var r = await fetch(SB_URL + "/rest/v1/rpc/" + name,
+    var r = await API("/rest/v1/rpc/" + name,
       { method: "POST", headers: H, body: JSON.stringify(body) });
     var t = await r.text();
     if (!r.ok) throw new Error(t.slice(0, 300) || ("HTTP " + r.status));
@@ -326,7 +332,7 @@
   async function admin(op, extra) {
     var body = { action: "admin", token: token(), op: op };
     if (extra) for (var k in extra) body[k] = extra[k];
-    var r = await fetch(FN_URL, { method: "POST", headers: H, body: JSON.stringify(body) });
+    var r = await API("/functions/v1/vn_clone", { method: "POST", headers: H, body: JSON.stringify(body) });
     var t = await r.text();
     var j = null;
     try { j = JSON.parse(t || "null"); } catch (e) {}
@@ -845,7 +851,7 @@
   /* ================= 载入 ================= */
   async function ping() {
     try {
-      var r = await fetch(FN_URL, { method: "POST", headers: H,
+      var r = await API("/functions/v1/vn_clone", { method: "POST", headers: H,
         body: JSON.stringify({ action: "admin", token: token(), op: "ping" }) });
       if (!r.ok) return 0;
       var j = await r.json();

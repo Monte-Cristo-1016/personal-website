@@ -15,11 +15,37 @@
 
   var SCR = document.currentScript;   /* 只有 manual 模式才拦着不自动开场 */
 
-  var SB_URL = "https://zhklmnxtdzhkouwfyghr.supabase.co";
-  var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20";
-  var EP = SB_URL + "/functions/v1/vn_clone";  /* 注意：Dashboard 里建的名字是下划线 vn_clone */
-  var AUTH = { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY };
-  var JSON_H = { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json" };
+  /* 后端入口统一在 assets/backend.js（直连 / 中转 / 故障转移都在那儿）。
+     下面留一份兜底，万一某页忘了引 backend.js，直连仍然照旧可用。 */
+  var VNB = window.VNB || {
+    KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20",
+    headers: function (json) {
+      var h = { apikey: this.KEY, Authorization: "Bearer " + this.KEY };
+      if (json) h["Content-Type"] = "application/json";
+      return h;
+    },
+    fetch: function (path, opts) {
+      return fetch("https://zhklmnxtdzhkouwfyghr.supabase.co" + path, opts);
+    }
+  };
+  var EP = "/functions/v1/vn_clone";  /* 注意：Dashboard 里建的名字是下划线 vn_clone */
+  var AUTH = VNB.headers(false);
+  var JSON_H = VNB.headers(true);
+
+  /* 连不上时的应急联系方式（与 contact.html 公开的一致，写死以免依赖页面结构） */
+  var MAIL = "3484991466@qq.com";
+  var WECHAT = "cyc20080310";
+
+  /* 「复制我那句」按钮的样式（自包含，chat.html / friends.html 都通用） */
+  (function () {
+    var s = document.createElement("style");
+    s.textContent =
+      ".vn-msg .vn-copy{margin-top:.5em;display:block;padding:.34em .9em;font:inherit;font-size:12px;" +
+      "letter-spacing:.14em;cursor:pointer;color:rgba(255,236,214,.95);background-color:rgba(12,20,44,.6);" +
+      "border:1px solid rgba(246,214,170,.42);border-radius:999px;transition:color .24s,border-color .24s}" +
+      ".vn-msg .vn-copy:hover{color:#fff;border-color:rgba(246,214,170,.8)}";
+    if (document.head) document.head.appendChild(s);
+  })();
 
   /* ---------- 同好话题：四个方向 ----------
      想改话题文案，只改这一块：
@@ -31,21 +57,21 @@
      （第一 / 三 / 四幕的正文台词不在这里，见各页 HTML 的 data-lines） */
   var TOPICS = {
     game: {
-      label: "游戏", mood: "happy",
+      label: "游戏", mood: "calm",
       opening: "我喜欢玩mc。入坑已经七年了，比较喜欢自己创造的成就感和沙盒的温馨吧。还有fgo、和平精英、型月的其他游戏也都玩过。有你喜欢的吗？",
       asks: ["你最近在捣鼓什么？", "平时都玩什么类型的游戏？", "那个小东西做到哪一步了？"],
       prime: "【话题背景】访客是从我主页的「同好 · 游戏」点进来的，想聊游戏、数码、自己动手做的东西。" +
              "接下来几轮请一直围着这条线聊，别跑去聊运动或别的。"
     },
     sport: {
-      label: "运动", mood: "smile",
+      label: "运动", mood: "calm",
       opening: "运动吗……？我从五岁就开始踢球了。网球打得也还过得去，乒乓球也会打，就是没有踢球喜欢。不喜欢就动不起来吧？",
       asks: ["你平时做什么运动？", "运动的时候你会想什么？", "有没有一起运动的朋友？"],
       prime: "【话题背景】访客是从我主页的「同好 · 运动」点进来的，想聊运动、身体状态、和人一起动起来。" +
              "接下来几轮请一直围着这条线聊，别跑去聊别的。"
     },
     daily: {
-      label: "日常", mood: "smile",
+      label: "日常", mood: "calm",
       opening: "日常？喜欢听歌看番，喝点咖啡自己一个人在耳机里消磨。当然我也不介意有一个关系好的人陪我，只是讲话会有点累。",
       asks: ["你一天大概怎么过？", "一个人待着的时候在做什么？", "喜欢什么歌？"],
       prime: "【话题背景】访客是从我主页的「同好 · 日常」点进来的，想聊平时的生活节奏、一个人待着的时候、小事和小确幸。" +
@@ -77,16 +103,23 @@
     } catch (e) { return "s-nostore"; }
   })();
 
-  /* ---------- 回复 → 立绘表情（本地关键词判断，不额外请求） ---------- */
+  /* ---------- 回复 → 立绘表情（本地关键词判断，不额外请求） ----------
+     2026-10 用户要求「减少大笑和眯眼笑的含量，尽量停在冷一点的微笑」。
+     于是把原来三档高能量表情全部并进 calm（睁眼、淡淡抿嘴）：
+         laugh（张嘴大笑）· happy（眯眼抿嘴）· smile（眯眼笑）
+     关键词一个没删，只是不再换脸 —— 以后要恢复层次，把下面三行的
+     "calm" 依次改回 laugh / happy / smile 即可。
+     注意：**顺序仍然要紧**（先匹配到的先赢），所以这三行留在原位，
+     别挪到 surprise/sad/shy/... 后面，否则会改变命中优先级。 */
   var MOOD_HINTS = [
-    ["laugh",    ["哈哈", "笑死", "笑出声", "hhh", "233", "lol","难绷", "绷不住了","诗人"]],
-    ["happy",    ["太好了", "开心", "高兴", "喜欢", "欢迎", "不错", "很棒", "点赞"]],
+    ["calm",     ["哈哈", "笑死", "笑出声", "hhh", "233", "lol","难绷", "绷不住了","诗人"]],
+    ["calm",     ["太好了", "开心", "高兴", "喜欢", "欢迎", "不错", "很棒", "点赞"]],
     ["surprise", ["居然", "竟然", "没想到", "意外",  "诶", "真假？","猎奇"]],
     ["sad",      ["抱歉", "可惜", "遗憾", "对不起", "没办法", "不太行", "做不到"]],
     ["shy",      ["不好意思", "害羞", "见笑", "过奖", "别夸"]],
     ["serious",  ["必须", "注意", "风险", "警告", "不要", "务必"]],
     ["think",    ["我想想", "大概", "也许", "可能", "取决于", "不太确定"]],
-    ["smile",    ["谢谢", "感谢", "嗯嗯", "可以呀", "好啊"]]
+    ["calm",     ["谢谢", "感谢", "嗯嗯", "可以呀", "好啊"]]
   ];
   function moodOf(text) {
     var t = text || "";
@@ -118,6 +151,56 @@
     d.className = "vn-msg " + kind;
     d.textContent = text || "";
     log.appendChild(d);
+    log.scrollTop = log.scrollHeight;
+    return d;
+  }
+
+  /* 连不上后端时的退路：把访客那句话变成能直接粘进微信/邮件的文本。
+     国内手机上到 *.supabase.co 常常整条 TCP 不通，纯前端绕不过去，
+     所以这里不硬撑，给一条「照样能把话送到」的路。 */
+  /* 复制到剪贴板：优先 Clipboard API，被拒就退回 textarea + execCommand。
+     两个都不行才让访客手动长按 —— iPhone Safari 偶发会拒绝 Clipboard API。 */
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      if (ta.setSelectionRange) ta.setSelectionRange(0, ta.value.length);
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return !!ok;
+    } catch (e) { return false; }
+  }
+
+  function copyText(text, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); },
+                                               function () { done(legacyCopy(text)); });
+      return;
+    }
+    done(legacyCopy(text));
+  }
+
+  function bubbleFail(q) {
+    var d = bubble("sys", "（连不上服务器。这句话可以复制了直接发我 —— 微信 " + WECHAT +
+                          " · QQ邮箱 " + MAIL + "）");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "vn-copy";
+    b.textContent = "复制我那句";
+    b.addEventListener("click", function () {
+      var t = (q == null ? "" : String(q)).trim();
+      if (!t) { b.textContent = "没有可复制的内容"; return; }
+      copyText("【来自个人主页 · 分身对话】\n" + t, function (ok) {
+        b.textContent = ok ? "已复制 ✓ 粘到微信/邮件即可" : "复制失败，请长按输入框手动复制";
+      });
+    });
+    d.appendChild(b);
     log.scrollTop = log.scrollHeight;
     return d;
   }
@@ -164,7 +247,7 @@
   function fromServer(first, retried) {
     var ctl = new AbortController();
     var timer = setTimeout(function () { ctl.abort(); }, 12000);
-    fetch(EP, { headers: AUTH, signal: ctl.signal })
+    VNB.fetch(EP, { headers: AUTH, signal: ctl.signal })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
@@ -278,7 +361,7 @@
     var ctl = new AbortController();
     var timer = setTimeout(function () { ctl.abort(); }, 30000);
     try {
-      var res = await fetch(EP, {
+      var res = await VNB.fetch(EP, {
         method: "POST",
         headers: JSON_H,
         body: JSON.stringify({ messages: outbound(), session: SESSION, page: location.pathname }),
@@ -326,8 +409,9 @@
       if (history.length && history[history.length - 1].role === "user") history.pop();
       try { input.value = q; } catch (e) {}
       bubble("sys", "（分身没接上：" + ((err && err.message) || err) + "）");
-      setSt("发送失败 —— 连不上 Supabase 服务器（多半是本机网络/代理到 *.supabase.co 不通）。" +
-            "这句话已经退回输入框，检查网络后点「发送」即可重发；也可以先用「✎ 反馈」留言。", "err");
+      bubbleFail(q);
+      setSt("发送失败 —— 连不上 Supabase 服务器（多半是你的网络到 *.supabase.co 不通）。" +
+            "这句话已经退回输入框，点「发送」可重发；也可以点下面「复制我那句」直接发我微信/邮件。", "err");
       mood("calm");
     } finally {
       clearTimeout(timer);

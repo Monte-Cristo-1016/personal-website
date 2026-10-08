@@ -1,0 +1,40 @@
+# vn-relay · Caddy 版（推荐：自动申请证书，改一个域名就能跑）
+#
+# 一台香港/日本的便宜 VPS（1C1G 足够），装好 Caddy，
+# 把本文件放到 /etc/caddy/Caddyfile，然后：
+#   sudo systemctl reload caddy
+#
+# 域名解析：把 vn-api.你的域名.com 的 A 记录指到这台机器的 IP。
+# 没域名也能顶：用 sslip.io / nip.io 的免费通配解析，例如
+#   vn-api.1.2.3.4.sslip.io
+# 它天生解析到 1.2.3.4，Caddy 照样能申请到证书。
+#
+# 部署完先自测（在任意机器上跑）：
+#   curl -i https://vn-api.你的域名.com/functions/v1/vn_clone
+# 应看到 200 / 401 之类的 Supabase 响应，而不是连不上。
+
+vn-api.你的域名.com {
+	reverse_proxy https://zhklmnxtdzhkouwfyghr.supabase.co {
+		# 关键：Host 必须是源站域名，否则 Supabase 会回 404。
+		# （SNI 由 Caddy 按上游地址自动带上，不用手写。）
+		header_up Host zhklmnxtdzhkouwfyghr.supabase.co
+
+		# 关键：别缓冲。分身是流式返回，攒着会「一个字都不出，最后一起蹦出来」。
+		flush_interval -1
+	}
+
+	# 请求体上限：留言限 2000 字，1MB 很宽裕
+	request_body {
+		max_size 1MB
+	}
+
+	# 日志（排障用；不用了可以删）
+	log {
+		output file /var/log/caddy/vn-relay.log
+	}
+}
+
+# 说明：Origin 请求头保持原样透传 —— Supabase 自己会回
+# `access-control-allow-origin: *`，浏览器那边就够了。
+# 如果哪天 CORS 报错，先 curl -i 看响应头里有没有 ACAO，别急着在这儿手动加，
+# 加了很容易变成「两个 ACAO」反而更不通。

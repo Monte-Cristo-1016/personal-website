@@ -9,8 +9,24 @@
 (function () {
   "use strict";
 
-  var SB_URL = "https://zhklmnxtdzhkouwfyghr.supabase.co";
-  var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20";
+  /* 后端入口统一在 assets/backend.js（直连 / 中转 / 故障转移都在那儿）。
+     下面留一份兜底，万一某页忘了引 backend.js，直连仍然照旧可用。 */
+  var VNB = window.VNB || {
+    KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpoa2xtbnh0ZHpoa291d2Z5Z2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNDQxODEsImV4cCI6MjEwNjkyMDE4MX0.9Iryd1HWZrPr8OkWclPpipi-PYlWzj9ORCInRSvjh20",
+    headers: function (json) {
+      var h = { apikey: this.KEY, Authorization: "Bearer " + this.KEY };
+      if (json) h["Content-Type"] = "application/json";
+      return h;
+    },
+    fetch: function (path, opts) {
+      return fetch("https://zhklmnxtdzhkouwfyghr.supabase.co" + path, opts);
+    }
+  };
+
+  /* 连不上时（国内网络到 *.supabase.co 常见 TCP 不通）的应急联系方式。
+     与 contact.html 上公开的那套一致，写死在这里是为了不依赖页面结构。 */
+  var MAIL = "3484991466@qq.com";
+  var WECHAT = "cyc20080310";
 
   var tag = document.currentScript;
   var SOURCE = (tag && tag.getAttribute("data-source")) || "序章";
@@ -62,6 +78,19 @@
     ".vnf-status[data-kind='ok']{color:#ffe6b8}",
     ".vnf-status[data-kind='err']{color:#ffb39c}",
     ".vnf-status[data-kind='busy']{color:rgba(246,214,170,.55)}",
+    /* 寄不出去时的兜底块 */
+    ".vnf-fail{display:none;margin:12px 0 0;padding:12px 14px;border-radius:14px;",
+    "border:1px solid rgba(255,179,156,.4);background-color:rgba(58,20,20,.32)}",
+    ".vnf-fail.on{display:block;animation:vnf-in .24s ease-out both}",
+    ".vnf-fail p{margin:0 0 10px;font-size:12.5px;line-height:1.8;letter-spacing:.05em;color:rgba(255,220,204,.94)}",
+    ".vnf-fail p:last-child{margin:10px 0 0}",
+    ".vnf-fail code{font-size:12px;color:#ffe6b8;word-break:break-all}",
+    ".vnf-fail-btns{display:flex;gap:9px;flex-wrap:wrap}",
+    ".vnf-alt{display:inline-flex;align-items:center;padding:8px 16px;cursor:pointer;font:inherit;font-size:12.5px;",
+    "letter-spacing:.14em;text-decoration:none;color:rgba(255,236,214,.96);background-color:rgba(12,20,44,.6);",
+    "border:1px solid rgba(246,214,170,.42);border-radius:999px;transition:color .24s,border-color .24s,background-color .24s}",
+    ".vnf-alt:hover{color:#fff;border-color:rgba(246,214,170,.8);background-color:rgba(20,32,64,.72)}",
+    ".vnf-fail-tip{font-size:11.5px;letter-spacing:.1em;color:rgba(246,214,170,.7)}",
     "body.vnf-lock{overflow:hidden}",
     "@keyframes vnf-in{from{opacity:0}to{opacity:1}}",
     "@keyframes vnf-panel{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}",
@@ -84,6 +113,14 @@
     '        <button class="vnf-close" type="button" data-vnf-close>关闭</button>',
     '      </div>',
     '      <p class="vnf-status" role="status" aria-live="polite"></p>',
+    '      <div class="vnf-fail" data-vnf-fail>',
+    '        <p>没寄出去 —— 多半是你的网络到 <code>*.supabase.co</code> 不通（国内手机上很常见，不是你的问题）。<br>这段话别白写，换下面任意一种方式发我，一样能看到：</p>',
+    '        <div class="vnf-fail-btns">',
+    '          <button class="vnf-alt" type="button" data-vnf-copy>复制这段话</button>',
+    '          <a class="vnf-alt" data-vnf-mail href="mailto:' + MAIL + '">发邮件给我</a>',
+    '        </div>',
+    '        <p class="vnf-fail-tip">QQ邮箱 ' + MAIL + ' · 微信 ' + WECHAT + '</p>',
+    '      </div>',
     '    </form>',
     '  </div>',
     '</div>'
@@ -105,6 +142,9 @@
   var form = mask.querySelector(".vnf-form");
   var status = mask.querySelector(".vnf-status");
   var sendBtn = mask.querySelector(".vnf-send");
+  var failBox = mask.querySelector("[data-vnf-fail]");
+  var copyBtn = mask.querySelector("[data-vnf-copy]");
+  var mailA = mask.querySelector("[data-vnf-mail]");
   var lastFocus = null;
 
   function setStatus(text, kind) {
@@ -112,8 +152,67 @@
     status.setAttribute("data-kind", kind || "");
   }
 
+  /* 把留言整理成一段可以直接粘贴/发信的文本 */
+  function draft() {
+    var who = (form.elements.who.value || "").trim();
+    var msg = (form.elements.msg.value || "").trim();
+    return "【来自个人主页 · " + SOURCE + "】\n" +
+      (who ? "称呼：" + who + "\n" : "") +
+      "内容：" + msg;
+  }
+
+  function hideFail() {
+    failBox.classList.remove("on");
+    copyBtn.textContent = "复制这段话";
+  }
+
+  function showFail() {
+    failBox.classList.add("on");
+    copyBtn.textContent = "复制这段话";
+    try {
+      mailA.href = "mailto:" + MAIL +
+        "?subject=" + encodeURIComponent("主页留言（" + SOURCE + "）") +
+        "&body=" + encodeURIComponent(draft());
+    } catch (e) { /* 个别浏览器不给拼 mailto，忽略 */ }
+  }
+
+  /* 复制到剪贴板：优先 Clipboard API，被拒就退回 textarea + execCommand。
+     两个都不行才让访客手动长按 —— iPhone Safari 偶发会拒绝 Clipboard API。 */
+  function legacyCopy(text) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      if (ta.setSelectionRange) ta.setSelectionRange(0, ta.value.length);
+      var ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return !!ok;
+    } catch (e) { return false; }
+  }
+
+  function copyText(text, done) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); },
+                                               function () { done(legacyCopy(text)); });
+      return;
+    }
+    done(legacyCopy(text));
+  }
+
+  copyBtn.addEventListener("click", function () {
+    copyText(draft(), function (ok) {
+      copyBtn.textContent = ok ? "已复制 ✓" : "复制失败，请长按上面的文字";
+    });
+  });
+
   function open() {
     lastFocus = document.activeElement;
+    hideFail();
     mask.classList.add("on");
     mask.setAttribute("aria-hidden", "false");
     document.body.classList.add("vnf-lock");
@@ -166,11 +265,9 @@
     setStatus("正在把这句话送出去…", "busy");
 
     try {
-      var res = await fetch(SB_URL + "/rest/v1/feedback", {
+      var res = await VNB.fetch("/rest/v1/feedback", {
         method: "POST",
         headers: {
-          apikey: SB_KEY,
-          Authorization: "Bearer " + SB_KEY,
           "Content-Type": "application/json",
           Prefer: "return=minimal"
         },
@@ -185,10 +282,12 @@
         var detail = await res.text();
         throw new Error("HTTP " + res.status + " " + detail.slice(0, 160));
       }
+      hideFail();
       setStatus("\u2713 已寄达。谢谢你，我一定会看到。", "ok");
       form.reset();
     } catch (err) {
-      setStatus("没寄出去：" + ((err && err.message) || err) + "（稍后再试一次）", "err");
+      setStatus("没寄出去：" + ((err && err.message) || err), "err");
+      showFail();
     } finally {
       sendBtn.disabled = false;
       sendBtn.textContent = old;

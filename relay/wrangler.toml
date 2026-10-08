@@ -1,0 +1,14 @@
+name = "vn-relay"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-10-08"
+
+# 部署：把 cloudflare-worker.js 和本文件放进一个空目录，然后
+#   npx wrangler login
+#   npx wrangler deploy
+#
+# 自定义域名（强烈建议，*.workers.dev 在国内多数不可达）：
+# 在 Cloudflare 控制台 → Workers → vn-relay → Settings → Domains & Routes
+# 添加一条 Custom Domain，例如 vn-api.你的域名.com
+#
+# 或者写成路由（二选一，取消注释并改成你的域名）：
+# routes = [{ pattern = "vn-api.你的域名.com/*", custom_domain = true }]
