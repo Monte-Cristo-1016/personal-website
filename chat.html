@@ -63,7 +63,27 @@
 
 <script src="assets/vn.js"></script>
 <script src="assets/avatar.js"></script>
+<script src="assets/scenes.js" data-scene-boot="manual"></script>
 <script src="assets/feedback.js" data-source="叁 · 对话"></script>
 <script src="assets/clone.js"></script>
+<script>
+  /* 叁的分身：点顶部「同好」话题芯片 → 除了换开场白/表情，也换背景场景（和贰同款快闪）。
+     scenes.js 带 data-scene-boot="manual"：本页默认是「入夜 · 青蓝天空」，进来时不抢景。
+     「不限」只重置话题、保留当前场景，所以空 key（data-topic=""）直接跳过。 */
+  (function () {
+    "use strict";
+    var chips = document.getElementById("vn-topics");
+    if (!chips || !window.VNscene) return;
+    var bs = chips.querySelectorAll(".vn-topic"), i;
+    for (i = 0; i < bs.length; i++) {
+      (function (b) {
+        b.addEventListener("click", function () {
+          var key = b.getAttribute("data-topic");
+          if (key) window.VNscene.go(key);
+        });
+      })(bs[i]);
+    }
+  })();
+</script>
 </body>
 </html>

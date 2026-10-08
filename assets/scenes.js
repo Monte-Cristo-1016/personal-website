@@ -19,6 +19,10 @@
   var btns = document.querySelectorAll(".vn-scene-btn");
   var cur = "daily";
   var reduce = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  /* data-scene-boot="manual"：页面自带背景（如叁的入夜天空）时不抢景 ——
+     进来先不画默认场景，等页面调 VNscene.go() 再换。贰不带这个属性，行为不变。 */
+  var SCR = document.currentScript;
+  var MANUAL = !!(SCR && SCR.getAttribute("data-scene-boot") === "manual");
 
   function paint(el, key) {
     var s = SCENES[key];
@@ -71,6 +75,13 @@
     }
   })();
 
-  paint(bg, cur);
-  sync(cur);
+  if (!MANUAL) { paint(bg, cur); sync(cur); }
+
+  /* 给页面留的口子：VNscene.go("game") 换景（带快闪）。叁的话题芯片点了走这里 ——
+     和贰点场景按钮其实同一条代码路径（go → 全黑那一瞬换景 → VNopenTopic）。 */
+  window.VNscene = {
+    go: go,
+    current: function () { return cur; },
+    scenes: SCENES
+  };
 })();
